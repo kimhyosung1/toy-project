@@ -18,30 +18,18 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
     "paths": {
-      "@app/common": [
-        "libs/common/src"
-      ],
-      "@app/common/*": [
-        "libs/common/src/*"
-      ],
-      "@app/core": [
-        "libs/core/src"
-      ],
-      "@app/core/*": [
-        "libs/core/src/*"
-      ],
-      "@app/database": [
-        "libs/database/src"
-      ],
-      "@app/database/*": [
-        "libs/database/src/*"
-      ],
-      "@app/proxy": [
-        "libs/proxy/src"
-      ],
-      "@app/proxy/*": [
-        "libs/proxy/src/*"
-      ]
+      "@app/common": ["libs/common/src"],
+      "@app/common/*": ["libs/common/src/*"],
+      "@app/core": ["libs/core/src"],
+      "@app/core/*": ["libs/core/src/*"],
+      "@app/database": ["libs/database/src"],
+      "@app/database/*": ["libs/database/src/*"],
+      "@app/proxy": ["libs/proxy/src"],
+      "@app/proxy/*": ["libs/proxy/src/*"],
+      "@app/global-dto": ["libs/global-dto/src"],
+      "@app/global-dto/*": ["libs/global-dto/src/*"],
+      "@app/utility": ["libs/utility/src"],
+      "@app/utility/*": ["libs/utility/src/*"]
     }
   }
 }

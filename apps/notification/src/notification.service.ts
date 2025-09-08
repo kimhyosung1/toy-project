@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { KeywordNotificationRepository } from '@app/database';
+import { KeywordNotificationRepository } from '@app/database/common';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
-import { RedisQueueName, SOURCE_TYPE } from 'libs/common/src/constants';
+import { RedisQueueName, SOURCE_TYPE } from '@app/common/constants';
 
 // 알림 생성을 위한 DTO 타입 정의
 export interface NotificationCreateInput {

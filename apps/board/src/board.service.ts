@@ -5,28 +5,27 @@ import {
   CreateBoardCommentDto,
   DeleteBoardRequest,
   SelectBoardCommentDto,
-} from '@app/common/dto/board/request';
+} from '@app/global-dto/board/request';
 import { Injectable, Logger, Inject } from '@nestjs/common';
 import {
   BoardEntity,
   BoardRepository,
   CommentRepository,
-  KeywordNotificationRepository,
-} from 'libs/database/src';
-import { DatabaseService } from 'libs/database/src/database.service';
+} from '@app/database/board';
+import { KeywordNotificationRepository } from '@app/database/common';
+import { DatabaseService } from '@app/database/database.service';
 import * as bcrypt from 'bcrypt';
 import {
   CreateBoardResponse,
   SelectBoardModel,
   SelectBoardResponse,
   UpdateBoardResponse,
-} from '@app/common/dto/board/response';
-import { classValidate } from '@app/common/validate/class-validate';
+} from '@app/global-dto/board/response';
 import {
   CreateBoardCommentResponse,
   SelectBoardCommentModel,
   SelectBoardCommentResponse,
-} from '@app/common/dto/board/response/board-comment-manage-response';
+} from '@app/global-dto/board/response/board-comment-manage-response';
 import { ProxyClientProvideService } from 'libs/proxy/src/common-proxy-client';
 import { ClientProxy } from '@nestjs/microservices';
 import { SOURCE_TYPE } from '@app/common';
@@ -71,8 +70,8 @@ export class BoardService {
         entityManager,
       );
 
-      // dto 유효성 검증
-      return await classValidate(CreateBoardResponse, savedBoard);
+      // 👈 인터셉터가 자동으로 CreateBoardResponse로 변환/검증함
+      return savedBoard;
     });
   }
 
@@ -85,16 +84,15 @@ export class BoardService {
       input.author,
     );
 
-    const models = await Promise.all(
-      boards.map(async (board) => {
-        return await classValidate(SelectBoardModel, board);
-      }),
-    );
+    const bb = boards[0];
+    bb.boardId = null;
 
-    return {
-      boards: models,
-      totalCount: total,
-    };
+    throw '내맘';
+    // 👈 인터셉터가 자동으로 SelectBoardResponse로 변환/검증함
+    // return {
+    //   boards: boards,
+    //   totalCount: total,
+    // };
   }
 
   // 게시글 수정 - 비밀번호 확인 후 트랜잭션 사용
@@ -114,7 +112,8 @@ export class BoardService {
         entityManager,
       );
 
-      return await classValidate(UpdateBoardResponse, response);
+      // 👈 인터셉터가 자동으로 UpdateBoardResponse로 변환/검증함
+      return response;
     });
   }
 
@@ -159,12 +158,8 @@ export class BoardService {
         entityManager,
       );
 
-      const response = await classValidate(
-        CreateBoardCommentResponse,
-        savedComment,
-      );
-
-      return response;
+      // 👈 인터셉터가 자동으로 CreateBoardCommentResponse로 변환/검증함
+      return savedComment;
     });
   }
 
@@ -178,14 +173,9 @@ export class BoardService {
       input.limit,
     );
 
-    const validatedComments = await Promise.all(
-      comments.map(async (comment) => {
-        return await classValidate(SelectBoardCommentModel, comment);
-      }),
-    );
-
+    // 👈 인터셉터가 자동으로 SelectBoardCommentResponse로 변환/검증함
     return {
-      comments: validatedComments,
+      comments: comments,
       totalCount: total,
     };
   }

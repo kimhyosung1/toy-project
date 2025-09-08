@@ -1,9 +1,9 @@
 import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { GatewayModule } from './gateway.module';
-import { CustomConfigService } from '@app/common/config/config.service';
+import { CustomConfigService } from '@app/core/config/config.service';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import { CustomConfigModule } from '@app/common/config/config.module';
-import { AllExceptionFilter } from 'libs/core/src/filter/exception/all-exception.filter';
+import { CustomConfigModule } from '@app/core/config/config.module';
+import { AllExceptionFilter } from '@app/core/filter/exception/all-exception.filter';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
@@ -31,10 +31,11 @@ async function bootstrap() {
 
   SwaggerModule.setup('api-docs', app, document);
 
-  // exception filter global로 exception filter 등록하기
+  // 🚨 모든 예외를 처리하는 전역 필터 등록 (HTTP, RPC 모두 처리)
   const httpAdapter = app.get(HttpAdapterHost);
-
   app.useGlobalFilters(new AllExceptionFilter(httpAdapter));
+
+  // 🚀 게이트웨이는 단순 프록시 역할 (인터셉터 없음)
 
   const options = config.gatewayServiceOptions.options as any;
 

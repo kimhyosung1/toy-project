@@ -1,18 +1,14 @@
-import { CustomConfigService } from '@app/common/config/config.service';
+import { CustomConfigService } from '@app/core/config/config.service';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { BoardEntity, CommentEntity } from './board';
 import {
   TestEntity,
-  BoardEntity,
-  CommentEntity,
   KeywordNotificationEntity,
-} from './entities';
-import {
   TestRepository2,
-  BoardRepository,
-  CommentRepository,
   KeywordNotificationRepository,
-} from './repositories';
+} from './common';
+import { BoardRepository, CommentRepository } from './board';
 import { DatabaseService } from './database.service';
 
 @Module({

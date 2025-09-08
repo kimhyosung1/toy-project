@@ -12,19 +12,17 @@ jest.mock('@app/database', () => {
         author: '테스트 작성자',
         createdAt: new Date(),
       }),
-      findAllBoards: jest
-        .fn()
-        .mockResolvedValue([
-          [
-            {
-              boardId: 1,
-              title: '테스트 제목',
-              content: '테스트 내용',
-              author: '테스트 작성자',
-            },
-          ],
-          1,
-        ]),
+      findAllBoards: jest.fn().mockResolvedValue([
+        [
+          {
+            boardId: 1,
+            title: '테스트 제목',
+            content: '테스트 내용',
+            author: '테스트 작성자',
+          },
+        ],
+        1,
+      ]),
       updateBoard: jest.fn().mockResolvedValue({
         boardId: 1,
         title: '수정된 제목',
@@ -46,19 +44,17 @@ jest.mock('@app/database', () => {
         content: '댓글 내용',
         createdAt: new Date(),
       }),
-      findCommentsByBoard: jest
-        .fn()
-        .mockResolvedValue([
-          [
-            {
-              commentId: 1,
-              boardId: 1,
-              author: '댓글 작성자',
-              content: '댓글 내용',
-            },
-          ],
-          1,
-        ]),
+      findCommentsByBoard: jest.fn().mockResolvedValue([
+        [
+          {
+            commentId: 1,
+            boardId: 1,
+            author: '댓글 작성자',
+            content: '댓글 내용',
+          },
+        ],
+        1,
+      ]),
     })),
   };
 });
@@ -79,7 +75,7 @@ jest.mock('@app/database/database.service', () => {
 });
 
 // 공통 설정 서비스 모킹
-jest.mock('@app/common/config/config.service', () => {
+jest.mock('@app/core/config/config.service', () => {
   return {
     CustomConfigService: jest.fn().mockImplementation(() => ({
       get: jest.fn((key) => {
