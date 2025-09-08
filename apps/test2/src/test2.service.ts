@@ -1,5 +1,5 @@
-import { CustomConfigService } from '@app/common/config/config.service';
-import { TestRepository2 } from '@app/database/repositories/test.repository';
+import { CustomConfigService } from '@app/core/config/config.service';
+import { TestRepository2 } from '@app/database/common';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()

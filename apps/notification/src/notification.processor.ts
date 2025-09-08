@@ -2,7 +2,7 @@ import { Process, Processor } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bull';
 import { NotificationService } from './notification.service';
-import { RedisQueueName } from 'libs/common/src/constants';
+import { RedisQueueName } from '@app/common/constants';
 
 @Processor(RedisQueueName.KEYWORD_NOTIFICATIONS)
 export class NotificationProcessor {

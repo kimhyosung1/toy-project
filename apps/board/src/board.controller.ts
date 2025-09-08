@@ -9,12 +9,13 @@ import {
   SelectBoardCommentDto,
   SelectBoardRequest,
   UpdateBoardRequest,
-} from '@app/common/dto/board/request';
+} from '@app/global-dto/board/request';
 import {
   CreateBoardResponse,
   SelectBoardResponse,
   UpdateBoardResponse,
-} from '@app/common/dto/board/response';
+} from '@app/global-dto/board/response';
+import { CheckResponseWithType } from '@app/common/decorators/check-response.decorator';
 
 @Controller('board')
 export class BoardController {
@@ -28,6 +29,7 @@ export class BoardController {
 
   // 게시글 작성 API
   @MessagePattern(CustomMessagePatterns.CreateBoard)
+  @CheckResponseWithType(CreateBoardResponse) // 🎯 명시적으로 응답 타입 지정
   async createBoard(
     @Payload() input: CreateBoardRequest,
   ): Promise<CreateBoardResponse> {
@@ -36,12 +38,14 @@ export class BoardController {
 
   // 게시글 목록 API
   @MessagePattern(CustomMessagePatterns.FindAllBoards)
+  @CheckResponseWithType(SelectBoardResponse) // 🎯 명시적으로 응답 타입 지정
   async findAllBoards(input: SelectBoardRequest): Promise<SelectBoardResponse> {
     return this.boardService.findAllBoards(input);
   }
 
   // 게시글 수정 API
   @MessagePattern(CustomMessagePatterns.UpdateBoard)
+  @CheckResponseWithType(UpdateBoardResponse) // 🎯 명시적으로 응답 타입 지정
   async updateBoard(input: UpdateBoardRequest): Promise<UpdateBoardResponse> {
     return this.boardService.updateBoard(input);
   }

@@ -8,7 +8,7 @@ import {
   SelectBoardRequest,
   CreateBoardCommentDto,
   SelectBoardCommentDto,
-} from '@app/common/dto/board/request';
+} from '@app/global-dto/board/request';
 
 describe('BoardController', () => {
   let controller: BoardController;

@@ -29,17 +29,17 @@ import {
   SelectBoardCommentDto,
   SelectBoardRequest,
   UpdateBoardRequest,
-} from '@app/common/dto/board/request';
+} from '@app/global-dto/board/request';
 import {
   CreateBoardResponse,
   SelectBoardResponse,
   UpdateBoardResponse,
-} from '@app/common/dto/board/response';
+} from '@app/global-dto/board/response';
 import {
   CreateBoardCommentResponse,
   SelectBoardCommentResponse,
-} from '@app/common/dto/board/response/board-comment-manage-response';
-import { CommentEntity } from '@app/database';
+} from '@app/global-dto/board/response/board-comment-manage-response';
+import { CommentEntity } from '@app/database/board';
 
 @Controller('boards')
 @ApiTags('Board')

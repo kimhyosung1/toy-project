@@ -1,20 +1,24 @@
 import { Module } from '@nestjs/common';
 import { NotificationController } from './notification.controller';
 import { NotificationService } from './notification.service';
-import { DatabaseModule } from 'libs/database/src';
-import { CustomConfigModule } from '@app/common/config/config.module';
+import { DatabaseModule } from '@app/database';
+import { CustomConfigModule } from '@app/core/config/config.module';
 import { BullModule } from '@nestjs/bull';
-import { RedisModule } from '@app/common/redis';
+import { RedisModule } from '@app/core/redis';
 import { ConfigService } from '@nestjs/config';
-import { CustomConfigService } from '@app/common/config';
-import { RedisQueueName } from 'libs/common/src/constants';
+import { CustomConfigService } from '@app/core/config';
+import { RedisQueueName } from '@app/common/constants';
 import { NotificationProcessor } from './notification.processor';
+import { InterceptorModule } from '@app/common';
+import { UtilityModule } from '@app/utility';
 
 @Module({
   imports: [
     CustomConfigModule,
     DatabaseModule,
     RedisModule,
+    InterceptorModule, // 🚀 ResponseTransformInterceptor 전역 등록
+    UtilityModule, // 🛠️ UtilityService 전역 사용
     BullModule.forRootAsync({
       inject: [ConfigService],
       useFactory: async (configService: CustomConfigService) => ({

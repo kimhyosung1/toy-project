@@ -1,4 +1,4 @@
-import { CustomConfigService } from '@app/common/config/config.service';
+import { CustomConfigService } from '@app/core/config/config.service';
 import { Injectable } from '@nestjs/common';
 import { ClientProxy, ClientProxyFactory } from '@nestjs/microservices';
 import { Request } from 'express';

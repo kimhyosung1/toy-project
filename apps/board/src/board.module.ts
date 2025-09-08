@@ -1,13 +1,21 @@
 import { Module } from '@nestjs/common';
 import { BoardController } from './board.controller';
 import { BoardService } from './board.service';
-import { DatabaseModule } from 'libs/database/src';
-import { CustomConfigModule } from '@app/common/config/config.module';
-import { RedisModule } from '@app/common/redis';
+import { DatabaseModule } from '@app/database';
+import { CustomConfigModule } from '@app/core/config/config.module';
+import { RedisModule } from '@app/core/redis';
 import { NOTIFICATION_FACTORY } from 'libs/proxy/src/common-proxy-client';
+import { InterceptorModule } from '@app/common';
+import { UtilityModule } from '@app/utility';
 
 @Module({
-  imports: [CustomConfigModule, DatabaseModule, RedisModule],
+  imports: [
+    CustomConfigModule,
+    DatabaseModule,
+    RedisModule,
+    InterceptorModule, // 🚀 ResponseTransformInterceptor 전역 등록
+    UtilityModule, // 🛠️ UtilityService 전역 사용
+  ],
   controllers: [BoardController],
   providers: [BoardService, NOTIFICATION_FACTORY],
 })
