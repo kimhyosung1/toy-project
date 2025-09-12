@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json.schemastore.org/swcrc",
+  "jsc": {
+    "parser": {
+      "syntax": "typescript",
+      "tsx": false,
+      "decorators": true,
+      "dynamicImport": true
+    },
+    "transform": {
+      "legacyDecorator": true,
+      "decoratorMetadata": true,
+      "decoratorVersion": "2022-03"
+    },
+    "target": "es2021",
+    "loose": false,
+    "externalHelpers": false,
+    "keepClassNames": true,
+    "preserveAllComments": false,
+    "paths": {
+      "@app/common": ["libs/common/src"],
+      "@app/common/*": ["libs/common/src/*"],
+      "@app/core": ["libs/core/src"],
+      "@app/core/*": ["libs/core/src/*"],
+      "@app/database": ["libs/database/src"],
+      "@app/database/*": ["libs/database/src/*"],
+      "@app/proxy": ["libs/proxy/src"],
+      "@app/proxy/*": ["libs/proxy/src/*"],
+      "@app/global-dto": ["libs/global-dto/src"],
+      "@app/global-dto/*": ["libs/global-dto/src/*"],
+      "@app/utility": ["libs/utility/src"],
+      "@app/utility/*": ["libs/utility/src/*"]
+    },
+    "baseUrl": "./"
+  },
+  "module": {
+    "type": "commonjs",
+    "strict": false,
+    "strictMode": true,
+    "lazy": false,
+    "noInterop": false
+  },
+  "minify": false,
+  "isModule": false,
+  "sourceMaps": true,
+  "inlineSourcesContent": true
+}

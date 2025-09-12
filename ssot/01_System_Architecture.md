@@ -7,6 +7,7 @@
 **개발 프레임워크**: NestJS v11  
 **런타임**: Node.js v22 (LTS)  
 **언어**: TypeScript  
+**컴파일러**: SWC (15.6% 성능 향상)  
 **데이터베이스**: MySQL + TypeORM  
 **캐싱**: Redis (Bull Queue)  
 **통신 프로토콜**: HTTP (외부), TCP (내부)  
@@ -586,10 +587,17 @@ try {
 
 ## 🔧 개발 및 배포
 
-### 1. 개발 환경
+### 1. 개발 환경 (SWC 자동 적용)
 
 ```bash
-# 개발 서버 실행
+# 개발 서버 실행 (모든 서비스에 SWC 자동 적용)
+pnpm run start:dev:gateway      # Gateway (SWC)
+pnpm run start:dev:board        # Board (SWC)
+pnpm run start:dev:notification # Notification (SWC)
+
+# SWC 성능 향상
+# - 개발 서버 빌드: 483ms (초고속)
+# - 핫 리로드: 더욱 빠른 코드 변경 감지
 pnpm run start:dev:gateway     # Gateway :3000
 pnpm run start:dev:board       # Board :3020
 pnpm run start:dev:notification # Notification :3030

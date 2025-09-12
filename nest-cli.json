@@ -5,7 +5,8 @@
   "compilerOptions": {
     "deleteOutDir": true,
     "webpack": true,
-    "tsConfigPath": "apps/gateway/tsconfig.app.json"
+    "tsConfigPath": "apps/gateway/tsconfig.app.json",
+    "builder": "swc"
   },
   "monorepo": true,
   "root": "apps/gateway",
@@ -16,7 +17,8 @@
       "entryFile": "main",
       "sourceRoot": "apps/gateway/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/gateway/tsconfig.app.json"
+        "tsConfigPath": "apps/gateway/tsconfig.app.json",
+        "builder": "swc"
       }
     },
     "test2": {
@@ -25,7 +27,8 @@
       "entryFile": "main",
       "sourceRoot": "apps/test2/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/test2/tsconfig.app.json"
+        "tsConfigPath": "apps/test2/tsconfig.app.json",
+        "builder": "swc"
       }
     },
     "common": {
@@ -70,7 +73,8 @@
       "entryFile": "main",
       "sourceRoot": "apps/board/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/board/tsconfig.app.json"
+        "tsConfigPath": "apps/board/tsconfig.app.json",
+        "builder": "swc"
       }
     },
     "notification": {
@@ -79,7 +83,8 @@
       "entryFile": "main",
       "sourceRoot": "apps/notification/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/notification/tsconfig.app.json"
+        "tsConfigPath": "apps/notification/tsconfig.app.json",
+        "builder": "swc"
       }
     }
   }
