@@ -32,7 +32,7 @@ export class CustomConfigService {
       options: {
         host: this.configService.get<string>('TEST2_SERVICE_HOST', '127.0.0.1'),
         port: parseInt(
-          this.configService.get<string>('TEST2_SERVICE_PORT', '3010'),
+          this.configService.get<string>('TEST2_SERVICE_PORT', '3003'),
         ),
       },
     };
@@ -45,7 +45,7 @@ export class CustomConfigService {
       options: {
         host: this.configService.get<string>('TEST2_SERVICE_HOST', '127.0.0.1'),
         port: parseInt(
-          this.configService.get<string>('TEST2_SERVICE_PORT', '3010'),
+          this.configService.get<string>('TEST2_SERVICE_PORT', '3003'),
         ),
       },
     };
@@ -58,7 +58,7 @@ export class CustomConfigService {
       options: {
         host: this.configService.get<string>('BOARD_SERVICE_HOST', '127.0.0.1'),
         port: parseInt(
-          this.configService.get<string>('BOARD_SERVICE_PORT', '3020'),
+          this.configService.get<string>('BOARD_SERVICE_PORT', '3001'),
         ),
       },
     };
@@ -71,7 +71,7 @@ export class CustomConfigService {
       options: {
         host: this.configService.get<string>('BOARD_SERVICE_HOST', '127.0.0.1'),
         port: parseInt(
-          this.configService.get<string>('BOARD_SERVICE_PORT', '3020'),
+          this.configService.get<string>('BOARD_SERVICE_PORT', '3001'),
         ),
       },
     };
@@ -87,7 +87,7 @@ export class CustomConfigService {
           '127.0.0.1',
         ),
         port: parseInt(
-          this.configService.get<string>('NOTIFICATION_SERVICE_PORT', '3030'),
+          this.configService.get<string>('NOTIFICATION_SERVICE_PORT', '3002'),
         ),
       },
     };
@@ -103,7 +103,7 @@ export class CustomConfigService {
           '127.0.0.1',
         ),
         port: parseInt(
-          this.configService.get<string>('NOTIFICATION_SERVICE_PORT', '3030'),
+          this.configService.get<string>('NOTIFICATION_SERVICE_PORT', '3002'),
         ),
       },
     };

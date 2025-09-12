@@ -57,10 +57,10 @@ erDiagram
 
     tb_board {
         int board_id PK
-        varchar title
+        varchar(255) title "최대 255자, 인덱스"
         text content
-        varchar author
-        varchar password "bcrypt 해시"
+        varchar(50) author "최대 50자"
+        varchar(255) password "bcrypt 해시, 최대 255자"
         timestamp created_at
         timestamp updated_at
     }
@@ -69,16 +69,17 @@ erDiagram
         int comment_id PK
         int board_id FK
         int parent_id FK "대댓글용, NULL 가능"
-        varchar content
-        varchar author
+        varchar(2000) content "최대 2000자"
+        varchar(50) author "최대 50자"
         timestamp created_at
     }
 
     tb_keyword_notification {
         int key_notification_id PK
-        varchar author
-        varchar keyword
+        varchar(50) author "최대 50자, 인덱스"
+        varchar(100) keyword "최대 100자, 인덱스"
         timestamp created_at
+        unique(author, keyword) "중복 방지"
     }
 ```
 
@@ -185,8 +186,13 @@ DB_DATABASE=public
 
 - **Primary Key**: 자동 인덱스
 - **Foreign Key**: 관계 조회 최적화
-- **검색 필드**: title, author, created_at
-- **복합 인덱스**: 필요 시 추가
+- **검색 필드**:
+  - `tb_board.title` (`idx_title`) - 제목 검색
+  - `tb_comment.board_id` (`idx_board_id`) - 댓글 조회
+  - `tb_comment.parent_id` (`idx_parent_id`) - 대댓글 조회
+  - `tb_keyword_notification.author` (`idx_author`) - 사용자별 키워드
+  - `tb_keyword_notification.keyword` (`idx_keyword`) - 키워드 매칭
+- **유니크 제약**: `tb_keyword_notification(author, keyword)` - 중복 방지
 
 ### 쿼리 최적화
 

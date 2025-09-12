@@ -14,10 +14,17 @@
 
 ### 🎯 핵심 특징
 
-#### **1. `@CheckResponse` 데코레이터 기반**
+#### **1. `@CheckResponseWithType` 데코레이터 기반**
 
 ```typescript
-@CheckResponse()
+// 컨트롤러 메서드에 직접 적용
+@MessagePattern(CustomMessagePatterns.SelectBoard)
+@CheckResponseWithType(SelectBoardResponse) // 👈 메서드에 타입 지정
+async selectBoard(input: SelectBoardRequest): Promise<SelectBoardResponse> {
+  return this.boardService.selectBoard(input);
+}
+
+// 응답 DTO 클래스 정의
 export class SelectBoardResponse {
   @Expose()
   @Type(() => SelectBoardModel)
@@ -45,7 +52,7 @@ export class SelectBoardResponse {
 
 ### 1. 게시글 목록 조회
 
-**Endpoint**: `GET /api/board`
+**Endpoint**: `GET /boards`
 
 **Query Parameters**:
 
@@ -96,7 +103,7 @@ interface BoardModel {
 
 ### 2. 게시글 작성
 
-**Endpoint**: `POST /api/board`
+**Endpoint**: `POST /boards`
 
 **Request Body**: `CreateBoardRequest`
 
@@ -124,7 +131,7 @@ interface CreateBoardRequest {
 
 ### 3. 게시글 수정
 
-**Endpoint**: `PUT /api/board/:boardId`
+**Endpoint**: `PUT /boards/:boardId`
 
 **Path Parameters**:
 
@@ -145,7 +152,7 @@ interface UpdateBoardRequest {
 
 ### 4. 게시글 삭제
 
-**Endpoint**: `DELETE /api/board/:boardId`
+**Endpoint**: `DELETE /boards/:boardId`
 
 **Path Parameters**:
 
@@ -166,7 +173,7 @@ interface DeleteBoardRequest {
 
 ### 1. 댓글 목록 조회
 
-**Endpoint**: `GET /api/board/:boardId/comment`
+**Endpoint**: `GET /boards/:boardId/comments`
 
 **Path Parameters**:
 
@@ -232,7 +239,7 @@ interface SelectBoardCommentModel {
 
 ### 2. 댓글 작성
 
-**Endpoint**: `POST /api/board/:boardId/comment`
+**Endpoint**: `POST /boards/:boardId/comments`
 
 **Path Parameters**:
 
@@ -468,7 +475,7 @@ interface ErrorResponse {
 
 ### 3. 확장 가능한 검증 시스템
 
-새로운 DTO 추가 시 `@CheckResponse` 데코레이터만 적용하면 자동으로 검증/변환 시스템이 적용됩니다.
+새로운 API 메서드 추가 시 `@CheckResponseWithType(ResponseType)` 데코레이터만 적용하면 자동으로 검증/변환 시스템이 적용됩니다.
 
 ## 📋 테스트 가이드
 
@@ -484,17 +491,17 @@ interface ErrorResponse {
 
 ```bash
 # 1. 게시글 작성
-curl -X POST http://localhost:3000/api/board \
+curl -X POST http://localhost:3000/boards \
   -H "Content-Type: application/json" \
   -d '{"title":"테스트","content":"키워드 포함","author":"홍길동","password":"1234"}'
 
 # 2. 댓글 작성
-curl -X POST http://localhost:3000/api/board/1/comment \
+curl -X POST http://localhost:3000/boards/1/comments \
   -H "Content-Type: application/json" \
   -d '{"boardId":1,"author":"김철수","content":"좋은 글이네요"}'
 
 # 3. 목록 조회
-curl "http://localhost:3000/api/board?page=1&limit=10"
+curl "http://localhost:3000/boards?page=1&limit=10"
 ```
 
 ## ⚠️ 주의사항
@@ -516,4 +523,3 @@ curl "http://localhost:3000/api/board?page=1&limit=10"
 - 대용량 데이터 조회 시 적절한 페이징 사용 권장
 - 검색 기능 사용 시 인덱스 활용을 위한 적절한 조건 설정
 - 키워드 알림 시스템은 비동기 처리로 응답 성능에 영향 없음
-

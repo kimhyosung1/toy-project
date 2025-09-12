@@ -197,11 +197,11 @@
 ### 1. 워크스페이스 설정
 
 ```json
-// package.json
+// package.json (현재 workspaces 설정 없음)
 {
   "name": "toy-project",
-  "private": true,
-  "workspaces": ["apps/*", "libs/*"]
+  "private": true
+  // "workspaces": ["apps/*", "libs/*"] // 현재 미구현
 }
 ```
 
@@ -210,9 +210,9 @@
 ```
 apps/
 ├── gateway/          # API Gateway (:3000)
-├── board/           # Board Service (:3020)
-├── notification/    # Notification Service (:3030)
-└── test2/          # Test Service (:3010)
+├── board/           # Board Service (:3001)
+├── notification/    # Notification Service (:3002)
+└── test2/          # Test Service (:3003)
 ```
 
 ### 3. 라이브러리 구조
@@ -518,11 +518,25 @@ CMD ["pnpm", "start:prod"]
 
 ✅ **완벽 호환**: Node.js v22와 pnpm v8은 완벽하게 호환됩니다.
 
+### 2. 현재 제한사항
+
+⚠️ **Workspaces 미설정**: 현재 `package.json`에 `workspaces` 설정이 누락되어 있어 일부 pnpm 명령어가 제한됩니다:
+
+```bash
+# 현재 사용 불가
+pnpm -r build     # workspaces 필요
+pnpm -r test      # workspaces 필요
+
+# 현재 대안 방법
+pnpm run build:all:swc    # 개별 빌드 스크립트 사용
+pnpm test                 # 글로벌 테스트
+```
+
 - **Node.js v22**: 2024년 LTS 버전으로 안정성 보장
 - **pnpm v8**: 최신 Node.js 버전 완벽 지원
 - **성능**: 기존 npm/yarn 대비 월등한 성능
 
-### 2. 의존성 관리 원칙
+### 3. 의존성 관리 원칙
 
 ```bash
 # ✅ 권장: 정확한 패키지명 사용
