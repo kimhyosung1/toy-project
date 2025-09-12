@@ -87,7 +87,11 @@ pnpm run build:all:swc
 # 1. 의존성 설치
 pnpm install
 
-# 2. 각 서비스를 개별 터미널에서 실행
+# 2. 환경변수 확인 (env/dev.env)
+# 기본 설정으로 바로 실행 가능하지만, 필요시 수정
+cat env/dev.env
+
+# 3. 각 서비스를 개별 터미널에서 실행
 pnpm run start:dev:gateway      # 터미널 1
 pnpm run start:dev:board        # 터미널 2
 pnpm run start:dev:notification # 터미널 3
@@ -98,6 +102,47 @@ pnpm run start:dev:notification # 터미널 3
 - **Gateway API**: http://localhost:3000
 - **Swagger 문서**: http://localhost:3000/api-docs
 - **헬스체크**: http://localhost:3000/health-check
+
+## ⚙️ 환경 설정
+
+### 환경변수 구성
+
+프로젝트는 `env/` 폴더의 환경별 설정 파일을 사용합니다:
+
+```bash
+env/
+├── dev.env     # 개발 환경 (기본값)
+├── qa.env      # QA 환경
+└── prod.env    # 프로덕션 환경
+```
+
+### 개발 환경 설정 예시 (env/dev.env)
+
+```bash
+# 개발 환경 설정
+NODE_ENV=dev
+COMPOSE_PROJECT_NAME=toy-project-dev
+
+# 서비스 포트
+GATEWAY_SERVICE_PORT=3000
+BOARD_SERVICE_PORT=3001
+NOTIFICATION_SERVICE_PORT=3002
+TEST2_SERVICE_PORT=3003
+
+# 데이터베이스 (로컬)
+DB_HOST=localhost
+DB_PORT=3306
+DB_USERNAME=root
+DB_PASSWORD=
+DB_DATABASE=public
+MYSQL_ROOT_PASSWORD=rootpassword
+
+# Redis (로컬)
+REDIS_HOST=localhost
+REDIS_PORT=6379
+```
+
+> 💡 **참고**: 기본 설정으로 바로 실행 가능합니다. MySQL과 Redis는 외부 서비스로 사용하므로 로컬에 설치되어 있어야 합니다.
 
 ## 🏗️ 기술 스택
 
