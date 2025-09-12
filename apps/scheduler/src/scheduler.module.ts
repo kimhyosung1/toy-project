@@ -14,9 +14,6 @@ import { CustomConfigModule } from '@app/core/config/config.module';
 // 도메인별 스케줄러 서비스들
 import { BoardSchedulerService } from './board/board-scheduler.service';
 
-// 스케줄러 전용 공통 서비스들
-import { SchedulerLoggerService } from './common/logger.service';
-
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -34,7 +31,6 @@ import { SchedulerLoggerService } from './common/logger.service';
   providers: [
     SchedulerService,
     BoardSchedulerService,
-    SchedulerLoggerService,
     {
       provide: APP_FILTER,
       useFactory: () => {

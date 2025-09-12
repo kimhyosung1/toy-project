@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import { CommentEntity } from '../entities/comment.entity';
+import { TbCommentEntity } from '../entities/tb-comment.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, In, IsNull, Repository } from 'typeorm';
-import { BoardEntity } from '../entities';
+import { TbBoardEntity } from '../entities';
 
 @Injectable()
 export class CommentRepository {
   constructor(
-    @InjectRepository(CommentEntity)
-    private readonly repository: Repository<CommentEntity>,
+    @InjectRepository(TbCommentEntity)
+    private readonly repository: Repository<TbCommentEntity>,
   ) {}
 
   async createComment(
@@ -17,15 +17,15 @@ export class CommentRepository {
     author: string,
     content: string,
     entityManager?: EntityManager,
-  ): Promise<CommentEntity> {
+  ): Promise<TbCommentEntity> {
     const emFlag = entityManager ? true : false;
 
     const commentRepository = emFlag
-      ? entityManager.getRepository(CommentEntity)
+      ? entityManager.getRepository(TbCommentEntity)
       : this.repository;
 
     const boardRepository = emFlag
-      ? entityManager.getRepository(BoardEntity)
+      ? entityManager.getRepository(TbBoardEntity)
       : this.repository;
 
     const board = await boardRepository.findOne({
@@ -63,7 +63,7 @@ export class CommentRepository {
     boardId: number,
     page: number,
     limit: number,
-  ): Promise<[CommentEntity[], number]> {
+  ): Promise<[TbCommentEntity[], number]> {
     // 1. 모든 최상위 댓글 조회 (parentId가 null인 댓글)
     const [rootComments, total] = await this.repository.findAndCount({
       where: { boardId, parentId: IsNull() },

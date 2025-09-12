@@ -1,0 +1,101 @@
+name: 🔄 Branch-specific Database Sync
+
+on:
+  workflow_run:
+    workflows: ['🚀 Main Services CI/CD']
+    types:
+      - completed
+    branches: [dev, qa, production]
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  database-sync:
+    name: 🚀 Database Sync & Auto Commit
+    runs-on: ubuntu-latest
+    if: |
+      contains(fromJson('["dev", "qa", "production"]'), github.ref_name) && 
+      github.event.workflow_run.conclusion == 'success'
+
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: 🛎️ Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: 📦 Install Global Dependencies
+        run: |
+          npm install -g ts-node typescript
+
+      - name: 🔧 Setup Database Environment
+        run: |
+          case "${{ github.ref_name }}" in
+            "dev")
+              # DEV 환경 하드코딩 (env/dev.env 참조)
+              echo "DB_HOST=localhost" >> $GITHUB_ENV
+              echo "DB_PORT=3306" >> $GITHUB_ENV
+              echo "DB_USERNAME=root" >> $GITHUB_ENV
+              echo "DB_PASSWORD=" >> $GITHUB_ENV
+              echo "DB_DATABASE=public" >> $GITHUB_ENV
+              ;;
+            "qa")
+              echo "DB_HOST=${{ secrets.QA_DB_HOST }}" >> $GITHUB_ENV
+              echo "DB_PORT=${{ secrets.QA_DB_PORT }}" >> $GITHUB_ENV
+              echo "DB_USERNAME=${{ secrets.QA_DB_USER }}" >> $GITHUB_ENV
+              echo "DB_PASSWORD=${{ secrets.QA_DB_PASSWORD }}" >> $GITHUB_ENV
+              echo "DB_DATABASE=${{ secrets.QA_DB_NAME }}" >> $GITHUB_ENV
+              ;;
+            "production")
+              echo "DB_HOST=${{ secrets.PROD_DB_HOST }}" >> $GITHUB_ENV
+              echo "DB_PORT=${{ secrets.PROD_DB_PORT }}" >> $GITHUB_ENV
+              echo "DB_USERNAME=${{ secrets.PROD_DB_USER }}" >> $GITHUB_ENV
+              echo "DB_PASSWORD=${{ secrets.PROD_DB_PASSWORD }}" >> $GITHUB_ENV
+              echo "DB_DATABASE=${{ secrets.PROD_DB_NAME }}" >> $GITHUB_ENV
+              ;;
+          esac
+
+      - name: 🚀 Run Database Sync & Auto Commit
+        run: |
+          # 환경 매핑
+          ENV_NAME="${{ github.ref_name }}"
+          if [ "$ENV_NAME" = "production" ]; then
+            ENV_NAME="prod"
+          fi
+
+          echo "🚀 Running database sync for $ENV_NAME environment..."
+
+          # 변경사항 추적
+          git status --porcelain > /tmp/before.txt
+
+          # DB 동기화 실행
+          chmod +x scripts/run-enhanced-db-sync.sh
+          ./scripts/run-enhanced-db-sync.sh "$ENV_NAME"
+
+          # 변경사항 확인 및 커밋
+          git status --porcelain > /tmp/after.txt
+
+          if ! diff -q /tmp/before.txt /tmp/after.txt > /dev/null; then
+            echo "📝 Changes detected, committing..."
+            
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action Bot"
+            
+            git add -A
+            git commit -m "🤖 Auto-sync database schema from $ENV_NAME environment [skip ci]"
+            git push origin ${{ github.ref_name }}
+            
+            echo "✅ Changes committed and pushed!"
+          else
+            echo "📝 No changes detected"
+          fi

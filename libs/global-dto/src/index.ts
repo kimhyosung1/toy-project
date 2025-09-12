@@ -1,2 +1,1 @@
-export * from './board/request';
-export * from './board/response';
+export * from './board';

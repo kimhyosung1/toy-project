@@ -67,7 +67,6 @@ export {
 
 export const CustomMessagePatterns = {
   // Health Check
-  Test2HealthCheck: 'Test2HealthCheck',
   BoardHealthCheck: 'BoardHealthCheck',
   NotificationHealthCheck: 'NotificationHealthCheck',
   SchedulerHealthCheck: 'SchedulerHealthCheck',

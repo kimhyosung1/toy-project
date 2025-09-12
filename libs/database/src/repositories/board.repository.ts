@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { BoardEntity } from '../entities/board.entity';
+import { TbBoardEntity } from '../entities/tb-board.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   EntityManager,
@@ -9,13 +9,12 @@ import {
   Repository,
 } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { CommentEntity } from '../entities';
 
 @Injectable()
 export class BoardRepository {
   constructor(
-    @InjectRepository(BoardEntity)
-    private readonly repository: Repository<BoardEntity>,
+    @InjectRepository(TbBoardEntity)
+    private readonly repository: Repository<TbBoardEntity>,
   ) {}
 
   async createBoard(
@@ -24,9 +23,9 @@ export class BoardRepository {
     author: string,
     hashedPassword: string,
     entityManager?: EntityManager,
-  ): Promise<BoardEntity> {
+  ): Promise<TbBoardEntity> {
     const transactionRepo = entityManager
-      ? entityManager.getRepository(BoardEntity)
+      ? entityManager.getRepository(TbBoardEntity)
       : this.repository;
 
     const board = transactionRepo.create({
@@ -43,7 +42,7 @@ export class BoardRepository {
     limit: number = 10,
     title?: string,
     author?: string,
-  ): Promise<[BoardEntity[], number]> {
+  ): Promise<[TbBoardEntity[], number]> {
     /* comment: 아래 쿼리를 의도한 orm 코드 생성
       SELECT id, title, author, created_at, updated_at
       FROM tb_board
@@ -53,7 +52,7 @@ export class BoardRepository {
     */
     /* comment: 풀스캔 검색을 사용했는데.. 데이터 형태와 크기, 상황에따라 검색 조건을 어떻게 할지 고려 필요 */
 
-    const whereConditions: FindOptionsWhere<BoardEntity>[] = [];
+    const whereConditions: FindOptionsWhere<TbBoardEntity>[] = [];
 
     if (title) {
       whereConditions.push({ title: ILike(`%${title}%`) });
@@ -81,7 +80,7 @@ export class BoardRepository {
     });
   }
 
-  async findOneBoard(boardId: number): Promise<BoardEntity | null> {
+  async findOneBoard(boardId: number): Promise<TbBoardEntity | null> {
     const board = await this.repository.findOne({
       where: { boardId: boardId },
     });
@@ -98,9 +97,9 @@ export class BoardRepository {
     title: string,
     content: string,
     entityManager?: EntityManager,
-  ): Promise<BoardEntity> {
+  ): Promise<TbBoardEntity> {
     const transactionRepo = entityManager
-      ? entityManager.getRepository(BoardEntity)
+      ? entityManager.getRepository(TbBoardEntity)
       : this.repository;
 
     const board = await transactionRepo.findOne({
@@ -126,7 +125,7 @@ export class BoardRepository {
     entityManager?: EntityManager,
   ): Promise<void> {
     const transactionRepo = entityManager
-      ? entityManager.getRepository(BoardEntity)
+      ? entityManager.getRepository(TbBoardEntity)
       : this.repository;
 
     const board = await transactionRepo.findOne({

@@ -2,108 +2,15 @@ name: 🕒 Scheduler Service CI/CD
 
 on:
   push:
-    branches: [main, develop]
-    paths:
-      - 'apps/scheduler/**'
-      - 'libs/**'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
-      - 'Dockerfile'
-      - 'docker-compose.yml'
-      - '.github/workflows/scheduler-ci-cd.yml'
-  pull_request:
-    branches: [main]
-    paths:
-      - 'apps/scheduler/**'
-      - 'libs/**'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
-      - 'Dockerfile'
+    branches: [dev, qa, production]
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: toy-project-scheduler
 
 jobs:
-  # 변경 사항 감지
-  changes:
-    runs-on: ubuntu-latest
-    outputs:
-      scheduler: ${{ steps.filter.outputs.scheduler }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v2
-        id: filter
-        with:
-          filters: |
-            scheduler:
-              - 'apps/scheduler/**'
-              - 'libs/**'
-              - 'package.json'
-              - 'pnpm-lock.yaml'
-              - 'Dockerfile'
-
-  # 테스트 및 빌드
-  test-and-build:
-    needs: changes
-    if: ${{ needs.changes.outputs.scheduler == 'true' }}
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [22]
-
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-
-      - name: 🔧 Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-
-      - name: 📦 Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8.15.6
-          run_install: false
-
-      - name: 📁 Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - name: 🗄️ Setup pnpm cache
-        uses: actions/cache@v3
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: 📦 Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: 🔍 Lint scheduler code
-        run: pnpm lint
-
-      - name: 🧪 Run scheduler tests
-        run: pnpm test apps/scheduler
-
-      - name: 🏗️ Build scheduler app
-        run: pnpm run build scheduler --builder swc
-
-      - name: 📊 Upload scheduler build artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: scheduler-build-${{ github.sha }}
-          path: dist/apps/scheduler/
-          retention-days: 7
-
-  # Docker 이미지 빌드 및 배포
-  docker-build-and-deploy:
-    needs: [changes, test-and-build]
-    if: ${{ needs.changes.outputs.scheduler == 'true' && github.ref == 'refs/heads/main' }}
+  docker-build:
+    name: 🐳 Scheduler Docker Build & Push
     runs-on: ubuntu-latest
 
     permissions:
@@ -128,77 +35,17 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ env.IMAGE_NAME }}
           tags: |
             type=ref,event=branch
-            type=ref,event=pr
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix=${{ github.ref_name }}-
+            type=raw,value=latest,enable=${{ github.ref_name == 'production' }}
 
       - name: 🏗️ Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile
+          file: ./Dockerfile.scheduler
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            NODE_ENV=production
+            NODE_ENV=${{ github.ref_name == 'production' && 'production' || github.ref_name }}
             TARGET_APPS=scheduler
-
-  # 스케줄러 특화 작업들
-  scheduler-specific-jobs:
-    needs: [changes, test-and-build]
-    if: ${{ needs.changes.outputs.scheduler == 'true' }}
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-
-      - name: 🔧 Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: 📦 Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8.15.6
-
-      - name: 📦 Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: 📥 Download build artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: scheduler-build-${{ github.sha }}
-          path: dist/apps/scheduler/
-
-      - name: 🕒 Validate cron expressions
-        run: |
-          echo "🔍 Validating scheduler cron expressions..."
-          # 스케줄러 설정 검증 로직 추가 가능
-
-      - name: 🧪 Run scheduler integration tests
-        run: |
-          echo "🧪 Running scheduler integration tests..."
-          # 스케줄러 통합 테스트 실행
-
-      - name: 📊 Performance benchmark
-        run: |
-          echo "📊 Running scheduler performance tests..."
-          # 스케줄러 성능 테스트 실행
-
-  # 배포 알림 (옵션)
-  notify-deployment:
-    needs: [docker-build-and-deploy]
-    if: ${{ always() && github.ref == 'refs/heads/main' }}
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: 📢 Deployment notification
-        run: |
-          if [ "${{ needs.docker-build-and-deploy.result }}" == "success" ]; then
-            echo "✅ Scheduler service deployed successfully!"
-          else
-            echo "❌ Scheduler service deployment failed!"
-          fi

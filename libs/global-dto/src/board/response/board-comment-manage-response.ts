@@ -35,7 +35,7 @@ export class SelectBoardCommentModel {
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
-  parentId: number;
+  parentId?: number;
 
   @ApiProperty({
     description: '게시글 댓글 내용',
@@ -71,7 +71,7 @@ export class SelectBoardCommentModel {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => SelectBoardCommentModel)
-  children: SelectBoardCommentModel[];
+  children?: SelectBoardCommentModel[];
 }
 
 export class SelectBoardCommentResponse {

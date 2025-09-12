@@ -2,6 +2,17 @@
 /dist
 /node_modules
 
+# db-analyzer dependencies
+scripts/db-analyzer/node_modules
+
+# Enhanced DB Sync generated files and backups
+libs/database/src/.backup-*
+libs/database/.backup-*
+scripts/db-analyzer/.backup-*
+*-schema.json
+sync-report.json
+temp/
+
 # Logs
 logs
 *.log
@@ -36,4 +47,4 @@ lerna-debug.log*
 
 # env
 env/*
-.env
+.env/

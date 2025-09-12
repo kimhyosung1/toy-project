@@ -62,6 +62,15 @@
 - `@app/database` - 통합된 Repository 및 Entity
 - `@app/core` - 공통 설정 및 유틸리티
 
+### 7. 문서 정책 통합 (SSOT)
+
+- **변경 전**: 각 폴더별로 분산된 README.md와 문서들
+- **변경 후**: 모든 정책과 문서를 `ssot/` 폴더에서 중앙 관리
+- **제거된 문서들**:
+  - `libs/database/src/procedures/README.md`
+  - `libs/database/src/procedures/docs/` 폴더 전체
+- **신규 통합 문서**: `ssot/10_Database_Procedures_Functions.md`
+
 ## 🚀 간단한 사용법
 
 ### Slack 알림 보내기
