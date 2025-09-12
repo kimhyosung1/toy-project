@@ -1,0 +1,33 @@
+{
+  "name": "db-analyzer",
+  "version": "1.0.0",
+  "description": "MySQL Database Schema Analyzer and Entity Generator",
+  "main": "schema-analyzer.ts",
+  "scripts": {
+    "analyze": "ts-node schema-analyzer.ts",
+    "generate-entities": "ts-node entity-generator.ts",
+    "generate-sp": "ts-node sp-repository-generator.ts",
+    "analyze-and-generate": "npm run analyze && npm run generate-entities && npm run generate-sp",
+    "build": "tsc",
+    "dev": "ts-node-dev --respawn --transpile-only schema-analyzer.ts"
+  },
+  "dependencies": {
+    "mysql2": "^3.6.0",
+    "typescript": "^5.0.0",
+    "ts-node": "^10.9.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "ts-node-dev": "^2.0.0"
+  },
+  "keywords": [
+    "mysql",
+    "typeorm",
+    "entity-generator",
+    "schema-analyzer",
+    "database",
+    "automation"
+  ],
+  "author": "GitHub Actions Auto-Generator",
+  "license": "MIT"
+}

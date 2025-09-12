@@ -1,0 +1,37 @@
+# 스케줄러 서비스 전용 Docker Compose
+name: toy-project-scheduler
+
+x-common-env: &common-env
+  NODE_ENV: ${NODE_ENV:-dev}
+  DB_HOST: ${DB_HOST:-localhost}
+  DB_PORT: ${DB_PORT:-3306}
+  DB_USERNAME: ${DB_USERNAME:-root}
+  DB_PASSWORD: ${DB_PASSWORD:-}
+  DB_DATABASE: ${DB_DATABASE:-public}
+  REDIS_HOST: ${REDIS_HOST:-localhost}
+  REDIS_PORT: ${REDIS_PORT:-6379}
+  SCHEDULER_SERVICE_PORT: ${SCHEDULER_SERVICE_PORT:-3004}
+
+services:
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile.scheduler
+    container_name: toy-project-scheduler
+    ports:
+      - '${SCHEDULER_SERVICE_PORT:-3004}:3004'
+    environment:
+      <<: *common-env
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:3004/api/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    volumes:
+      - ./logs:/app/logs
+
+networks:
+  default:
+    name: toy-project-scheduler-network

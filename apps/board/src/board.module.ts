@@ -4,7 +4,6 @@ import { BoardService } from './board.service';
 import { DatabaseModule } from '@app/database';
 import { CustomConfigModule } from '@app/core/config/config.module';
 import { RedisModule } from '@app/core/redis';
-import { NOTIFICATION_FACTORY } from 'libs/proxy/src/common-proxy-client';
 import { InterceptorModule } from '@app/common';
 import { UtilityModule } from '@app/utility';
 
@@ -17,6 +16,6 @@ import { UtilityModule } from '@app/utility';
     UtilityModule, // 🛠️ UtilityService 전역 사용
   ],
   controllers: [BoardController],
-  providers: [BoardService, NOTIFICATION_FACTORY],
+  providers: [BoardService],
 })
 export class BoardModule {}

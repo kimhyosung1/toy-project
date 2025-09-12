@@ -17,7 +17,7 @@ import { RedisQueueName } from '@app/common/constants';
       inject: [CustomConfigService],
     }),
     BullModule.registerQueue({
-      name: RedisQueueName.KEYWORD_NOTIFICATIONS,
+      name: RedisQueueName.NOTIFICATIONS,
     }),
   ],
   exports: [BullModule],

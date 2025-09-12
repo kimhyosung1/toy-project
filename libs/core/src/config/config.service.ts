@@ -109,6 +109,38 @@ export class CustomConfigService {
     };
   }
 
+  // NestFactory.createMicroservice()용 옵션 (MicroserviceOptions)
+  get schedulerMicroserviceOptions(): MicroserviceOptions {
+    return {
+      transport: Transport.TCP,
+      options: {
+        host: this.configService.get<string>(
+          'SCHEDULER_SERVICE_HOST',
+          '127.0.0.1',
+        ),
+        port: parseInt(
+          this.configService.get<string>('SCHEDULER_SERVICE_PORT', '3004'),
+        ),
+      },
+    };
+  }
+
+  // ClientProxyFactory.create()용 옵션 (ClientOptions)
+  get schedulerClientOptions(): ClientOptions {
+    return {
+      transport: Transport.TCP,
+      options: {
+        host: this.configService.get<string>(
+          'SCHEDULER_SERVICE_HOST',
+          '127.0.0.1',
+        ),
+        port: parseInt(
+          this.configService.get<string>('SCHEDULER_SERVICE_PORT', '3004'),
+        ),
+      },
+    };
+  }
+
   get dbHost(): string {
     return this.configService.get<string>('DB_HOST', 'localhost');
   }
@@ -143,5 +175,44 @@ export class CustomConfigService {
 
   get redisPort(): number {
     return this.configService.get<number>('REDIS_PORT', 6379);
+  }
+
+  // Scheduler Service Options
+  get schedulerServiceOptions(): MicroserviceOptions {
+    return {
+      transport: Transport.TCP,
+      options: {
+        host: this.configService.get<string>(
+          'SCHEDULER_SERVICE_HOST',
+          '127.0.0.1',
+        ),
+        port: parseInt(
+          this.configService.get<string>('SCHEDULER_SERVICE_PORT', '3004'),
+        ),
+      },
+    };
+  }
+
+  // Environment
+  get environment(): string {
+    return this.configService.get<string>('NODE_ENV', 'dev');
+  }
+
+  // Sentry Configuration
+  get sentryDSNDev(): string {
+    return this.configService.get<string>('SENTRY_DSN_DEV', '');
+  }
+
+  get sentryDSNProduction(): string {
+    return this.configService.get<string>('SENTRY_DSN_PRODUCTION', '');
+  }
+
+  // Slack Configuration
+  get slackWebhookUrl(): string {
+    return this.configService.get<string>('SLACK_WEBHOOK_URL', '');
+  }
+
+  get slackChannel(): string {
+    return this.configService.get<string>('SLACK_CHANNEL', '#alerts');
   }
 }

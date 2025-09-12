@@ -1,3 +1,3 @@
 export * from './config';
+export * from './filter';
 export * from './redis';
-export * from './filter/exception/all-exception.filter';

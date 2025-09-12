@@ -212,7 +212,8 @@ apps/
 ├── gateway/          # API Gateway (:3000)
 ├── board/           # Board Service (:3001)
 ├── notification/    # Notification Service (:3002)
-└── test2/          # Test Service (:3003)
+├── test2/          # Test Service (:3003)
+└── scheduler/      # Scheduler Service (:3004)
 ```
 
 ### 3. 라이브러리 구조

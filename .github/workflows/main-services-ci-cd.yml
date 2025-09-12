@@ -1,0 +1,246 @@
+name: 🚀 Main Services CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'apps/gateway/**'
+      - 'apps/board/**'
+      - 'apps/notification/**'
+      - 'apps/test2/**'
+      - 'libs/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - '.github/workflows/main-services-ci-cd.yml'
+    paths-ignore:
+      - 'apps/scheduler/**'
+      - '.github/workflows/scheduler-ci-cd.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/gateway/**'
+      - 'apps/board/**'
+      - 'apps/notification/**'
+      - 'apps/test2/**'
+      - 'libs/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'Dockerfile'
+    paths-ignore:
+      - 'apps/scheduler/**'
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  # 변경 사항 감지
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      gateway: ${{ steps.filter.outputs.gateway }}
+      board: ${{ steps.filter.outputs.board }}
+      notification: ${{ steps.filter.outputs.notification }}
+      test2: ${{ steps.filter.outputs.test2 }}
+      libs: ${{ steps.filter.outputs.libs }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            gateway:
+              - 'apps/gateway/**'
+              - 'libs/**'
+            board:
+              - 'apps/board/**'
+              - 'libs/**'
+            notification:
+              - 'apps/notification/**'
+              - 'libs/**'
+            test2:
+              - 'apps/test2/**'
+              - 'libs/**'
+            libs:
+              - 'libs/**'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+
+  # 테스트 및 빌드
+  test-and-build:
+    needs: changes
+    if: ${{ needs.changes.outputs.gateway == 'true' || needs.changes.outputs.board == 'true' || needs.changes.outputs.notification == 'true' || needs.changes.outputs.test2 == 'true' || needs.changes.outputs.libs == 'true' }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [22]
+        service: [gateway, board, notification, test2]
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8.15.6
+          run_install: false
+
+      - name: 📁 Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: 🗄️ Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: 📦 Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: 🔍 Lint code
+        run: pnpm lint
+
+      - name: 🧪 Run tests
+        run: pnpm test
+
+      - name: 🏗️ Build ${{ matrix.service }} app
+        run: pnpm run build ${{ matrix.service }} --builder swc
+
+      - name: 📊 Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.service }}-build-${{ github.sha }}
+          path: dist/apps/${{ matrix.service }}/
+          retention-days: 7
+
+  # E2E 테스트
+  e2e-tests:
+    needs: test-and-build
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: testpassword
+          MYSQL_DATABASE: test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8.15.6
+
+      - name: 📦 Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: 🧪 Run E2E tests
+        run: pnpm test:e2e
+        env:
+          DB_HOST: localhost
+          DB_PORT: 3306
+          DB_USERNAME: root
+          DB_PASSWORD: testpassword
+          DB_DATABASE: test
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+
+  # Docker 이미지 빌드 (메인 브랜치만)
+  docker-build:
+    needs: [changes, test-and-build, e2e-tests]
+    if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        service: [gateway, board, notification, test2]
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔐 Login to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📝 Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}/toy-project-${{ matrix.service }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: 🏗️ Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            NODE_ENV=production
+            TARGET_APPS=${{ matrix.service }}
+
+  # 배포 알림
+  notify-deployment:
+    needs: [docker-build]
+    if: ${{ always() && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📢 Deployment notification
+        run: |
+          if [ "${{ needs.docker-build.result }}" == "success" ]; then
+            echo "✅ Main services deployed successfully!"
+          else
+            echo "❌ Main services deployment failed!"
+          fi

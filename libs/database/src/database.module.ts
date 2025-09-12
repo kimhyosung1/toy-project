@@ -1,13 +1,9 @@
 import { CustomConfigService } from '@app/core/config/config.service';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
-import { BoardEntity, CommentEntity } from './board';
-import {
-  TestEntity,
-  KeywordNotificationEntity,
-  TestRepository2,
-  KeywordNotificationRepository,
-} from './common';
+import { DataSource } from 'typeorm';
+import { BoardEntity, CommentEntity, TestEntity } from './entities';
+import { TestRepository2 } from './common';
 import { BoardRepository, CommentRepository } from './board';
 import { DatabaseService } from './database.service';
 
@@ -23,29 +19,25 @@ import { DatabaseService } from './database.service';
         username: configService.dbUserName,
         password: configService.dbPW,
         database: configService.dbDatabase,
-        entities: [
-          TestEntity,
-          BoardEntity,
-          CommentEntity,
-          KeywordNotificationEntity,
-        ],
+        entities: [TestEntity, BoardEntity, CommentEntity],
         synchronize: configService.dbSync, // 개발 환경에서만 사용, 프로덕션에서는 false로 설정
       }),
       inject: [CustomConfigService],
     }),
-    TypeOrmModule.forFeature([
-      TestEntity,
-      BoardEntity,
-      CommentEntity,
-      KeywordNotificationEntity,
-    ]),
+    TypeOrmModule.forFeature([TestEntity, BoardEntity, CommentEntity]),
   ],
   providers: [
-    DatabaseService,
+    {
+      provide: DatabaseService,
+      useFactory: (dataSource: DataSource) => {
+        const service = new DatabaseService(dataSource);
+        return DatabaseService.createProxy(service); // Proxy 적용!
+      },
+      inject: [DataSource],
+    },
     TestRepository2,
     BoardRepository,
     CommentRepository,
-    KeywordNotificationRepository,
   ],
   exports: [
     TypeOrmModule,
@@ -53,7 +45,6 @@ import { DatabaseService } from './database.service';
     TestRepository2,
     BoardRepository,
     CommentRepository,
-    KeywordNotificationRepository,
   ],
 })
 export class DatabaseModule {}

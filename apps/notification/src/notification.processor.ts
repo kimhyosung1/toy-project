@@ -4,7 +4,7 @@ import { Job } from 'bull';
 import { NotificationService } from './notification.service';
 import { RedisQueueName } from '@app/common/constants';
 
-@Processor(RedisQueueName.KEYWORD_NOTIFICATIONS)
+@Processor(RedisQueueName.NOTIFICATIONS)
 export class NotificationProcessor {
   private readonly logger = new Logger(NotificationProcessor.name);
 

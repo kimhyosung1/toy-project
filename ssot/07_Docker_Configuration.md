@@ -18,6 +18,7 @@
 | **Board**        | `board`        | 3001 | 게시판 마이크로서비스        | TCP       |
 | **Notification** | `notification` | 3002 | 알림 마이크로서비스          | TCP       |
 | **Test2**        | `test2`        | 3003 | 테스트 마이크로서비스        | TCP       |
+| **Scheduler**    | `scheduler`    | 3004 | 스케줄링 마이크로서비스      | TCP       |
 
 ### 아키텍처 구조
 
@@ -29,6 +30,7 @@ graph TB
             BD[Board :3001]
             NT[Notification :3002]
             T2[Test2 :3003]
+            SC[Scheduler :3004]
         end
     end
 
@@ -41,6 +43,7 @@ graph TB
     GW --> BD
     GW --> NT
     GW --> T2
+    GW --> SC
 
     BD --> DB
     BD --> RD

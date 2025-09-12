@@ -1,85 +1,85 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { KeywordNotificationRepository } from '@app/database/common';
-import { InjectQueue } from '@nestjs/bull';
-import { Queue } from 'bull';
-import { RedisQueueName, SOURCE_TYPE } from '@app/common/constants';
+import { Injectable } from '@nestjs/common';
+import { SlackService, SentryService } from '@app/notification';
 
-// 알림 생성을 위한 DTO 타입 정의
-export interface NotificationCreateInput {
-  title: string;
-  content?: string;
-  author: string;
-  sourceType: SOURCE_TYPE;
-  sourceId: number;
-  keywords: string[];
-  createdAt?: Date;
-}
-
+/**
+ * 간단하고 깔끔한 알림 서비스
+ * 성공/실패만 반환하는 단순한 구조
+ */
 @Injectable()
 export class NotificationService {
-  private readonly logger = new Logger(NotificationService.name);
-
   constructor(
-    private readonly keywordNotificationRepository: KeywordNotificationRepository,
-    @InjectQueue(RedisQueueName.KEYWORD_NOTIFICATIONS)
-    private readonly notificationsQueue: Queue,
+    private readonly slackService: SlackService,
+    private readonly sentryService: SentryService,
   ) {}
 
-  healthCheck(): string {
-    return 'i am alive!!';
+  /**
+   * 📱 Slack 메시지 전송
+   */
+  async sendSlack(
+    message: string,
+    channel?: string,
+  ): Promise<{ success: boolean }> {
+    const success = await this.slackService.sendMessage(message, channel);
+    return { success };
   }
 
   /**
-   * 키워드 매치 처리 및 알림 큐 작업 추가
-   * Board 서비스에서 키워드 매칭 이벤트를 받아 처리
+   * 🚨 Slack 에러 알림 전송
    */
-  async addKeywordMatchesQueue(
-    sourceType: SOURCE_TYPE,
-    sourceId: number,
-    title: string,
-    content: string,
-    keywordMatches: any[],
-    timestamp: string,
-  ): Promise<void> {
-    try {
-      this.logger.log(
-        `[알림] ${keywordMatches.length}개의 키워드 매치 처리 시작`,
-      );
+  async sendSlackError(
+    message: string,
+    context?: any,
+  ): Promise<{ success: boolean }> {
+    const success = await this.slackService.sendError(message, context);
+    return { success };
+  }
 
-      // 각 키워드 매치를 개별 알림 작업으로 큐에 추가
-      const queuePromises = keywordMatches.map((keywordMatch) => {
-        // 큐에 알림 작업 추가
-        return this.notificationsQueue.add(
-          `${keywordMatch.author}-notification-${sourceType}`,
-          {
-            title,
-            content,
-            sourceType,
-            sourceId,
-            matchedKeywords: keywordMatch,
-            timestamp: timestamp || new Date().toISOString(),
-          },
-        );
-      });
+  /**
+   * 🚨 Sentry 에러 리포팅
+   */
+  async sendSentryError(
+    message: string,
+    context?: any,
+  ): Promise<{ success: boolean }> {
+    const error = typeof message === 'string' ? new Error(message) : message;
+    const success = await this.sentryService.reportError(error, context);
+    return { success };
+  }
 
-      // 모든 큐 작업 추가 요청을 병렬로 처리하되 완료를 기다리지 않음 (비동기)
-      Promise.all(queuePromises)
-        .then((results) => {
-          this.logger.log(
-            `[알림] 모든 알림 큐 작업 추가 완료 (총 ${results.length}개)`,
-          );
-        })
-        .catch((error) => {
-          this.logger.error(
-            `[알림] 큐 작업 추가 중 오류: ${error.message}`,
-            error.stack,
-          );
-        });
-    } catch (error) {
-      this.logger.error(
-        `[알림] 큐 작업 초기화 중 오류: ${error.message}`,
-        error.stack,
-      );
-    }
+  /**
+   * ✅ 성공 알림 전송
+   */
+  async sendSuccess(message: string): Promise<{ success: boolean }> {
+    const success = await this.slackService.sendSuccess(message);
+    return { success };
+  }
+
+  /**
+   * ⚠️ 경고 알림 전송
+   */
+  async sendWarning(message: string): Promise<{ success: boolean }> {
+    const success = await this.slackService.sendWarning(message);
+    return { success };
+  }
+
+  /**
+   * 📝 Sentry 메시지 리포팅
+   */
+  async sendSentry(
+    message: string,
+    level: 'info' | 'warning' | 'error' = 'info',
+  ): Promise<{ success: boolean }> {
+    const success = await this.sentryService.reportMessage(message, level);
+    return { success };
+  }
+
+  /**
+   * 🏥 헬스 체크
+   */
+  healthCheck(): { status: string; timestamp: string } {
+    return {
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+    };
   }
 }

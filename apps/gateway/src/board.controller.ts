@@ -39,7 +39,7 @@ import {
   CreateBoardCommentResponse,
   SelectBoardCommentResponse,
 } from '@app/global-dto/board/response/board-comment-manage-response';
-import { CommentEntity } from '@app/database/board';
+import { CommentEntity } from '@app/database';
 
 @Controller('boards')
 @ApiTags('Board')

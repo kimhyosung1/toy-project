@@ -24,12 +24,16 @@
       "@app/core/*": ["libs/core/src/*"],
       "@app/database": ["libs/database/src"],
       "@app/database/*": ["libs/database/src/*"],
-      "@app/proxy": ["libs/proxy/src"],
-      "@app/proxy/*": ["libs/proxy/src/*"],
       "@app/global-dto": ["libs/global-dto/src"],
       "@app/global-dto/*": ["libs/global-dto/src/*"],
+      "@app/proxy": ["libs/proxy/src"],
+      "@app/proxy/*": ["libs/proxy/src/*"],
       "@app/utility": ["libs/utility/src"],
-      "@app/utility/*": ["libs/utility/src/*"]
+      "@app/utility/*": ["libs/utility/src/*"],
+      "@app/notification": ["libs/notification/src"],
+      "@app/notification/*": ["libs/notification/src/*"],
+      "@app/notification-client": ["libs/notification-client/src"],
+      "@app/notification-client/*": ["libs/notification-client/src/*"]
     }
   }
 }

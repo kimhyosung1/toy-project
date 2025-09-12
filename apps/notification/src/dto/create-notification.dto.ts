@@ -25,8 +25,4 @@ export class CreateNotificationDto {
 
   @IsNumber()
   sourceId: number;
-
-  @IsString()
-  @IsOptional()
-  keyword?: string;
 }

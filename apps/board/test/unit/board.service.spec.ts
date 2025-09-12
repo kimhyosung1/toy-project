@@ -1,15 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BoardService } from '../../src/board.service';
-import { BoardRepository, CommentRepository } from '@app/database/board';
-import { KeywordNotificationRepository } from '@app/database/common';
-import { DatabaseService } from '@app/database/database.service';
+import { BoardRepository, CommentRepository } from '@app/database';
+import { KeywordNotificationRepository } from '@app/database';
+import { DatabaseService } from '@app/database';
 import { ClientProxy } from '@nestjs/microservices';
 import * as bcrypt from 'bcrypt';
 import { SOURCE_TYPE } from '@app/common';
 import { EntityManager } from 'typeorm';
 import { CreateBoardRequest } from '@app/global-dto/board/request';
 import { ProxyClientProvideService } from 'libs/proxy/src/common-proxy-client';
-import { BoardEntity } from '@app/database/board';
+import { BoardEntity } from '@app/database';
 
 jest.mock('bcrypt');
 

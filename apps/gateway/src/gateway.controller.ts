@@ -3,6 +3,7 @@ import {
   CommonProxyClient,
   ProxyClientProvideService,
   CustomMessagePatterns,
+  SCHEDULER_FACTORY,
 } from 'libs/proxy/src/common-proxy-client';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -17,6 +18,8 @@ export class GatewayController extends CommonProxyClient {
     protected NotificationClient: ClientProxy,
     @Inject(ProxyClientProvideService.BOARD_SERVICE)
     protected BoardClient: ClientProxy,
+    @Inject(ProxyClientProvideService.SCHEDULER_SERVICE)
+    protected SchedulerClient: ClientProxy,
   ) {
     super();
   }
@@ -57,6 +60,17 @@ export class GatewayController extends CommonProxyClient {
     return this.requestRedirect(
       CustomMessagePatterns.NotificationHealthCheck,
       this.NotificationClient,
+      req,
+    );
+  }
+
+  @Get('scheduler/health-check')
+  @ApiOperation({ summary: 'Scheduler App Health Check API' })
+  @ApiOkResponse({ type: String })
+  public schedulerHealthCheck(@Req() req: Request) {
+    return this.requestRedirect(
+      CustomMessagePatterns.SchedulerHealthCheck,
+      this.SchedulerClient,
       req,
     );
   }

@@ -11,23 +11,13 @@
   "monorepo": true,
   "root": "apps/gateway",
   "projects": {
-    "gateway": {
+    "board": {
       "type": "application",
-      "root": "apps/gateway",
+      "root": "apps/board",
       "entryFile": "main",
-      "sourceRoot": "apps/gateway/src",
+      "sourceRoot": "apps/board/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/gateway/tsconfig.app.json",
-        "builder": "swc"
-      }
-    },
-    "test2": {
-      "type": "application",
-      "root": "apps/test2",
-      "entryFile": "main",
-      "sourceRoot": "apps/test2/src",
-      "compilerOptions": {
-        "tsConfigPath": "apps/test2/tsconfig.app.json",
+        "tsConfigPath": "apps/board/tsconfig.app.json",
         "builder": "swc"
       }
     },
@@ -58,22 +48,13 @@
         "tsConfigPath": "libs/database/tsconfig.lib.json"
       }
     },
-    "proxy": {
-      "type": "library",
-      "root": "libs/proxy",
-      "entryFile": "index",
-      "sourceRoot": "libs/proxy",
-      "compilerOptions": {
-        "tsConfigPath": "libs/proxy/tsconfig.lib.json"
-      }
-    },
-    "board": {
+    "gateway": {
       "type": "application",
-      "root": "apps/board",
+      "root": "apps/gateway",
       "entryFile": "main",
-      "sourceRoot": "apps/board/src",
+      "sourceRoot": "apps/gateway/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/board/tsconfig.app.json",
+        "tsConfigPath": "apps/gateway/tsconfig.app.json",
         "builder": "swc"
       }
     },
@@ -85,6 +66,42 @@
       "compilerOptions": {
         "tsConfigPath": "apps/notification/tsconfig.app.json",
         "builder": "swc"
+      }
+    },
+    "notification-lib": {
+      "type": "library",
+      "root": "libs/notification",
+      "entryFile": "index",
+      "sourceRoot": "libs/notification/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/notification/tsconfig.lib.json"
+      }
+    },
+    "notification-client": {
+      "type": "library",
+      "root": "libs/notification-client",
+      "entryFile": "index",
+      "sourceRoot": "libs/notification-client/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/notification-client/tsconfig.lib.json"
+      }
+    },
+    "proxy": {
+      "type": "library",
+      "root": "libs/proxy",
+      "entryFile": "index",
+      "sourceRoot": "libs/proxy",
+      "compilerOptions": {
+        "tsConfigPath": "libs/proxy/tsconfig.lib.json"
+      }
+    },
+    "scheduler": {
+      "type": "application",
+      "root": "apps/scheduler",
+      "entryFile": "main",
+      "sourceRoot": "apps/scheduler/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/scheduler/tsconfig.app.json"
       }
     }
   }

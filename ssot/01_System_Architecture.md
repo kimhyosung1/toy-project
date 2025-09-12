@@ -56,6 +56,7 @@ graph TB
         Board[Board Service :3001]
         Notification[Notification Service :3002]
         Test2[Test2 Service :3003]
+        Scheduler[Scheduler Service :3004]
     end
 
     subgraph "External Services"
@@ -71,6 +72,7 @@ graph TB
     Gateway --> Board
     Gateway --> Notification
     Gateway --> Test2
+    Gateway --> Scheduler
 
     Board --> MySQL
     Board --> Redis
@@ -82,6 +84,7 @@ graph TB
     Board -.-> Docker
     Notification -.-> Docker
     Test2 -.-> Docker
+    Scheduler -.-> Docker
 ```
 
 ## 🐳 컨테이너 아키텍처
@@ -102,11 +105,14 @@ services:
 
   test2: # 컨테이너명: test2
     ports: ['3003:3003']
+
+  scheduler: # 컨테이너명: scheduler
+    ports: ['3004:3004']
 ```
 
 **주요 특징:**
 
-- ✅ **간소화된 컨테이너명**: `gateway`, `board`, `notification`, `test2`
+- ✅ **간소화된 컨테이너명**: `gateway`, `board`, `notification`, `test2`, `scheduler`
 - ✅ **프로젝트명**: `toy-project`
 - ✅ **포트 매핑**: 호스트와 컨테이너 동일 포트 사용
 - ✅ **공통 환경변수**: `x-common-env` 앵커 패턴 활용
@@ -120,11 +126,12 @@ services:
 | **Board**        | 3001 | `board`        | TCP       | 게시판 CRUD, 댓글 관리  |
 | **Notification** | 3002 | `notification` | TCP       | 키워드 알림, Queue 처리 |
 | **Test2**        | 3003 | `test2`        | TCP       | 테스트 서비스           |
+| **Scheduler**    | 3004 | `scheduler`    | TCP       | 스케줄링, Cron 작업     |
 
 **통신 플로우:**
 
 ```
-Client (HTTP) → Gateway (HTTP:3000) → Microservices (TCP:3001-3003)
+Client (HTTP) → Gateway (HTTP:3000) → Microservices (TCP:3001-3004)
 ```
 
 ## 🏗️ 마이크로서비스 상세 구조
@@ -238,6 +245,35 @@ apps/test2/src/
 ├── test2.controller.ts        # TCP 컨트롤러
 └── test2.service.ts           # 테스트 로직
 ```
+
+### 5. Scheduler Service (:3004)
+
+**역할**: 스케줄링 및 백그라운드 작업 처리
+
+**기술 구성**:
+
+- **TCP 마이크로서비스**: NestJS 마이크로서비스
+- **스케줄링**: @nestjs/schedule (Cron 기반)
+- **백그라운드 작업**: 주기적 작업 실행
+- **독립 배포**: 다른 서비스와 분리된 CI/CD
+
+**구성요소**:
+
+```typescript
+apps/scheduler/src/
+├── main.ts                    # 마이크로서비스 진입점
+├── scheduler.module.ts        # 스케줄러 모듈
+├── scheduler.controller.ts    # TCP 컨트롤러
+└── scheduler.service.ts       # 스케줄링 로직
+```
+
+**주요 기능**:
+
+- 매분/5분/시간/일 단위 Cron 작업
+- 스케줄러 시작/중지 제어
+- 스케줄러 상태 모니터링
+- 데이터베이스 정리 작업
+- 알림 배치 처리
 
 ## 📚 공유 라이브러리 구조
 

@@ -23,6 +23,7 @@ export enum ProxyClientProvideService {
   TEST2_SERVICE = 'TEST2_SERVICE',
   NOTIFICATION_SERVICE = 'NOTIFICATION_SERVICE',
   BOARD_SERVICE = 'BOARD_SERVICE',
+  SCHEDULER_SERVICE = 'SCHEDULER_SERVICE',
 }
 
 const TEST2_FACTORY = {
@@ -49,13 +50,27 @@ const BOARD_FACTORY = {
   inject: [CustomConfigService],
 };
 
-export { TEST2_FACTORY, NOTIFICATION_FACTORY, BOARD_FACTORY };
+const SCHEDULER_FACTORY = {
+  provide: ProxyClientProvideService.SCHEDULER_SERVICE,
+  useFactory: (configService: CustomConfigService) => {
+    return ClientProxyFactory.create(configService.schedulerClientOptions);
+  },
+  inject: [CustomConfigService],
+};
+
+export {
+  TEST2_FACTORY,
+  NOTIFICATION_FACTORY,
+  BOARD_FACTORY,
+  SCHEDULER_FACTORY,
+};
 
 export const CustomMessagePatterns = {
-  // common
+  // Health Check
   Test2HealthCheck: 'Test2HealthCheck',
   BoardHealthCheck: 'BoardHealthCheck',
   NotificationHealthCheck: 'NotificationHealthCheck',
+  SchedulerHealthCheck: 'SchedulerHealthCheck',
 
   // Board
   CreateBoard: 'CreateBoard',
@@ -65,5 +80,8 @@ export const CustomMessagePatterns = {
   CreateComment: 'CreateComment',
   FindCommentsByBoard: 'FindCommentsByBoard',
 
-  // Notification
+  // Scheduler
+  SchedulerStart: 'SchedulerStart',
+  SchedulerStop: 'SchedulerStop',
+  SchedulerStatus: 'SchedulerStatus',
 };

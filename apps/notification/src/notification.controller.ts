@@ -1,49 +1,62 @@
-import { Controller, Get, Logger } from '@nestjs/common';
+import { Controller, Get, Post, Body } from '@nestjs/common';
 import { NotificationService } from './notification.service';
-import { MessagePattern, Payload, EventPattern } from '@nestjs/microservices';
-import { CustomMessagePatterns } from '@app/proxy/common-proxy-client';
 
-@Controller()
+@Controller('notifications')
 export class NotificationController {
-  private readonly logger = new Logger(NotificationController.name);
-
   constructor(private readonly notificationService: NotificationService) {}
 
-  @Get()
-  @MessagePattern(CustomMessagePatterns.NotificationHealthCheck)
-  healthCheck(): string {
+  @Get('/health')
+  healthCheck() {
     return this.notificationService.healthCheck();
   }
 
   /**
-   * 키워드 매칭 이벤트 수신 핸들러
-   * Board 서비스가 발행한 키워드 매칭 이벤트를 수신하여 알림 처리
+   * 📱 Slack 메시지 전송
    */
-  @EventPattern('keyword.matched')
-  async handleKeywordMatched(@Payload() data: any): Promise<void> {
-    try {
-      this.logger.log(
-        `[알림 이벤트] 키워드 매칭 이벤트 수신: ${data.keywordMatches.length}개 매치`,
-      );
+  @Post('/slack')
+  async sendSlack(@Body() body: { message: string; channel?: string }) {
+    return this.notificationService.sendSlack(body.message, body.channel);
+  }
 
-      // 키워드 매치를 알림 큐에 추가 - 비동기 처리 (await 제거)
-      this.notificationService.addKeywordMatchesQueue(
-        data.sourceType,
-        data.sourceId,
-        data.title,
-        data.content,
-        data.keywordMatches,
-        data.timestamp,
-      );
+  /**
+   * 🚨 Slack 에러 알림 전송
+   */
+  @Post('/slack/error')
+  async sendSlackError(@Body() body: { message: string; context?: any }) {
+    return this.notificationService.sendSlackError(body.message, body.context);
+  }
 
-      this.logger.log(
-        '[알림 이벤트] 키워드 매칭 이벤트 처리 요청 완료 (비동기 처리 중)',
-      );
-    } catch (error) {
-      this.logger.error(
-        `[알림 이벤트] 키워드 매칭 이벤트 처리 중 오류: ${error.message}`,
-        error.stack,
-      );
-    }
+  /**
+   * 🚨 Sentry 에러 리포팅
+   */
+  @Post('/sentry/error')
+  async sendSentryError(@Body() body: { message: string; context?: any }) {
+    return this.notificationService.sendSentryError(body.message, body.context);
+  }
+
+  /**
+   * ✅ 성공 알림 전송
+   */
+  @Post('/success')
+  async sendSuccess(@Body() body: { message: string }) {
+    return this.notificationService.sendSuccess(body.message);
+  }
+
+  /**
+   * ⚠️ 경고 알림 전송
+   */
+  @Post('/warning')
+  async sendWarning(@Body() body: { message: string }) {
+    return this.notificationService.sendWarning(body.message);
+  }
+
+  /**
+   * 📝 Sentry 메시지 리포팅
+   */
+  @Post('/sentry')
+  async sendSentry(
+    @Body() body: { message: string; level?: 'info' | 'warning' | 'error' },
+  ) {
+    return this.notificationService.sendSentry(body.message, body.level);
   }
 }

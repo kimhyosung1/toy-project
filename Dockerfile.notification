@@ -1,0 +1,49 @@
+# Multi-stage build for Notification Service
+FROM node:18-alpine AS base
+
+# Install dependencies only when needed
+FROM base AS deps
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+
+# Copy package files
+COPY package*.json pnpm-lock.yaml ./
+RUN corepack enable && corepack prepare pnpm@8.15.6 --activate && pnpm install --frozen-lockfile
+
+# Build the application
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+# Build notification app and its dependencies
+RUN npm run build notification
+
+# Production image
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+# Create app user
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 notification
+
+# Copy built application
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package*.json ./
+
+# Create logs directory
+RUN mkdir -p logs && chown notification:nodejs logs
+
+USER notification
+
+EXPOSE 3005
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:3005/api/notifications/health || exit 1
+
+# Start the application
+CMD ["node", "dist/apps/notification/main.js"]

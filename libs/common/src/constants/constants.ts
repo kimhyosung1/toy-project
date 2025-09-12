@@ -1,6 +1,6 @@
 // 애플리케이션 전체에서 사용하는 Queue 이름을 정의하는 enum
 export enum RedisQueueName {
-  KEYWORD_NOTIFICATIONS = 'keyword-notifications',
+  NOTIFICATIONS = 'notifications',
   // 향후 추가될 수 있는 큐 이름들...
 }
 
