@@ -7,6 +7,8 @@ import {
   EntityTarget,
 } from 'typeorm';
 import { BoardEntity, CommentEntity, TestEntity } from './entities';
+import { plainToClass, ClassConstructor } from 'class-transformer';
+import { validate } from 'class-validator';
 
 /**
  * 데이터베이스 트랜잭션 및 Repository 접근을 위한 서비스
@@ -34,6 +36,7 @@ export class DatabaseService {
   // Proxy를 이용한 자동 Repository 접근 🚀
   // 이제 databaseService.boardRepository, databaseService.userRepository 등이 자동으로 동작!
   private repositoryCache = new Map<string, Repository<any>>();
+  private entityClassCache = new Map<string, any>();
 
   /**
    * Proxy를 통한 자동 Repository 접근
@@ -53,7 +56,13 @@ export class DatabaseService {
 
         // Repository 패턴 체크 (xxxRepository 형태)
         if (prop.endsWith('Repository')) {
-          return target.getRepositoryByName(prop);
+          try {
+            return target.getRepositoryByName(prop);
+          } catch (error) {
+            // Proxy에서는 에러를 던지지 말고 undefined 반환
+            console.error(`❌ ${error.message}`);
+            return undefined;
+          }
         }
 
         return target[prop as keyof DatabaseService];
@@ -64,7 +73,7 @@ export class DatabaseService {
   /**
    * 이름으로 Repository 가져오기 (내부 메서드)
    */
-  private getRepositoryByName(repositoryName: string): Repository<any> {
+  private getRepositoryByName(repositoryName: string): Repository<any> | null {
     // 캐시 확인
     if (this.repositoryCache.has(repositoryName)) {
       return this.repositoryCache.get(repositoryName)!;
@@ -84,18 +93,31 @@ export class DatabaseService {
         return repository;
       }
     } catch (error) {
-      console.warn(`Repository ${repositoryName} not found:`, error.message);
+      console.error(
+        `❌ Repository ${repositoryName} not found:`,
+        error.message,
+      );
+      throw new Error(
+        `Repository '${repositoryName}' not found. Available entities: ${this.getAvailableEntities().join(', ')}`,
+      );
     }
 
-    // 못 찾으면 undefined 반환
-    return undefined as any;
+    // 엔티티를 찾지 못한 경우 명확한 에러
+    throw new Error(
+      `Entity '${entityClassName}' not found. Available entities: ${this.getAvailableEntities().join(', ')}`,
+    );
   }
 
   /**
-   * 엔티티 클래스 동적 찾기 (완전 자동화!)
+   * 엔티티 클래스 동적 찾기 (캐시 적용으로 성능 개선)
    * DataSource에서 등록된 모든 엔티티를 가져와서 이름으로 매칭
    */
   private findEntityClass(entityClassName: string): any {
+    // 캐시 확인
+    if (this.entityClassCache.has(entityClassName)) {
+      return this.entityClassCache.get(entityClassName);
+    }
+
     // DataSource에서 등록된 모든 엔티티 메타데이터 가져오기
     const entityMetadatas = this.dataSource.entityMetadatas;
 
@@ -105,11 +127,33 @@ export class DatabaseService {
         metadata.target &&
         (metadata.target as any).name === entityClassName
       ) {
+        // 캐시에 저장
+        this.entityClassCache.set(entityClassName, metadata.target);
         return metadata.target;
       }
     }
 
+    // 캐시에 null도 저장 (반복 검색 방지)
+    this.entityClassCache.set(entityClassName, null);
     return null;
+  }
+
+  /**
+   * 사용 가능한 엔티티 목록 조회 (디버깅용)
+   */
+  private getAvailableEntities(): string[] {
+    return this.dataSource.entityMetadatas
+      .map((metadata) => (metadata.target as any)?.name)
+      .filter((name) => name)
+      .sort();
+  }
+
+  /**
+   * 캐시 정리 (메모리 관리)
+   */
+  clearRepositoryCache(): void {
+    this.repositoryCache.clear();
+    this.entityClassCache.clear();
   }
 
   /**
@@ -166,9 +210,174 @@ export class DatabaseService {
   }
 
   /**
-   * Raw SQL 쿼리 실행
+   * Raw SQL 쿼리 실행 (내부 사용 및 레거시 호환성)
+   * 새로운 코드에서는 queryOneResult() 또는 queryManyResults() 사용을 권장합니다.
    */
   async query(sql: string, parameters?: any[]): Promise<any> {
     return this.dataSource.query(sql, parameters);
+  }
+
+  // =========================
+  // 🔄 Raw SQL 쿼리 결과 변환 유틸리티
+  // =========================
+
+  /**
+   * 객체인지 확인하는 유틸리티 함수
+   */
+  private isObject(value: any): boolean {
+    return value !== null && typeof value === 'object' && !Array.isArray(value);
+  }
+
+  /**
+   * 배열인지 확인하는 유틸리티 함수
+   */
+  private isArray(value: any): boolean {
+    return Array.isArray(value);
+  }
+
+  /**
+   * snake_case를 camelCase로 변환하는 함수
+   */
+  private toCamel(str: string): string {
+    return str.replace(/([-_][a-z])/gi, ($1) => {
+      return $1.toUpperCase().replace('-', '').replace('_', '');
+    });
+  }
+
+  /**
+   * 객체의 모든 키를 snake_case에서 camelCase로 변환
+   */
+  private columnToCamel(data: any[] | any): any {
+    if (this.isObject(data)) {
+      // Date 객체는 변환하지 않음
+      if (data instanceof Date) {
+        return data;
+      }
+
+      const converted = {};
+      Object.keys(data).forEach((key) => {
+        converted[this.toCamel(key)] = this.columnToCamel(data[key]);
+      });
+      return converted;
+    } else if (this.isArray(data)) {
+      return data.map((item) => this.columnToCamel(item));
+    }
+
+    return data;
+  }
+
+  /**
+   * 반환 타입 검증 및 변환
+   */
+  private async validateReturnType<T extends object>(
+    data: any,
+    classConstructor: ClassConstructor<T>,
+  ): Promise<T> {
+    try {
+      const instance = plainToClass(classConstructor, data);
+      const errors = await validate(instance as object);
+
+      if (errors.length > 0) {
+        const errorMessages = errors
+          .map((error) => Object.values(error.constraints || {}).join(', '))
+          .join('; ');
+        throw new Error(`Validation failed: ${errorMessages}`);
+      }
+
+      return instance;
+    } catch (error) {
+      throw new Error(`Failed to validate return type: ${error.message}`);
+    }
+  }
+
+  // =========================
+  // 🚀 개선된 Raw SQL 쿼리 메서드들
+  // =========================
+
+  /**
+   * Raw SQL 쿼리 실행 후 단일 결과 반환 (camelCase 변환)
+   * @param query SQL 쿼리
+   * @param parameters 쿼리 파라미터
+   * @param classConstructor 반환 타입 클래스 (선택사항)
+   * @returns 변환된 단일 객체 또는 null
+   */
+  protected async queryOne<T extends object>(
+    query: string,
+    parameters?: any[],
+    classConstructor?: ClassConstructor<T>,
+  ): Promise<T | null> {
+    const results = await this.query(query, parameters);
+    const result = (results || [])[0];
+
+    if (!result) {
+      return null;
+    }
+
+    const convertedResult = this.columnToCamel(result);
+
+    if (!classConstructor) {
+      return convertedResult;
+    }
+
+    return this.validateReturnType(convertedResult, classConstructor);
+  }
+
+  /**
+   * Raw SQL 쿼리 실행 후 다중 결과 반환 (camelCase 변환)
+   * @param query SQL 쿼리
+   * @param parameters 쿼리 파라미터
+   * @param classConstructor 반환 타입 클래스 (선택사항)
+   * @returns 변환된 객체 배열
+   */
+  protected async queryMany<T extends object>(
+    query: string,
+    parameters?: any[],
+    classConstructor?: ClassConstructor<T>,
+  ): Promise<T[]> {
+    const queryResult = this.columnToCamel(await this.query(query, parameters));
+
+    if (!classConstructor) {
+      return queryResult;
+    }
+
+    return Promise.all(
+      queryResult.map((item) =>
+        this.validateReturnType(item, classConstructor),
+      ),
+    );
+  }
+
+  // =========================
+  // 🎯 Public API for Raw SQL with camelCase conversion
+  // =========================
+
+  /**
+   * Raw SQL 쿼리 실행 후 단일 결과 반환 (Public API)
+   * @param query SQL 쿼리
+   * @param parameters 쿼리 파라미터
+   * @param classConstructor 반환 타입 클래스 (선택사항)
+   * @returns 변환된 단일 객체 또는 null
+   */
+  async queryOneResult<T extends object>(
+    query: string,
+    parameters?: any[],
+    classConstructor?: ClassConstructor<T>,
+  ): Promise<T | null> {
+    return this.queryOne(query, parameters, classConstructor);
+  }
+
+  /**
+   * Raw SQL 쿼리 실행 후 다중 결과 반환 (Public API)
+   * @param query SQL 쿼리
+   * @param parameters 쿼리 파라미터
+   * @param classConstructor 반환 타입 클래스 (선택사항)
+   * @returns 변환된 객체 배열
+   */
+  async queryManyResults<T extends object>(
+    query: string,
+    parameters?: any[],
+    classConstructor?: ClassConstructor<T>,
+  ): Promise<T[]> {
+    return this.queryMany(query, parameters, classConstructor);
   }
 }

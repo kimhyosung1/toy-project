@@ -2,9 +2,8 @@ import { CustomConfigService } from '@app/core/config/config.service';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
-import { BoardEntity, CommentEntity, TestEntity } from './entities';
-import { TestRepository2 } from './common';
-import { BoardRepository, CommentRepository } from './board';
+import { ALL_ENTITIES } from './entities';
+import { ALL_REPOSITORIES } from './repositories';
 import { DatabaseService } from './database.service';
 
 @Module({
@@ -19,12 +18,12 @@ import { DatabaseService } from './database.service';
         username: configService.dbUserName,
         password: configService.dbPW,
         database: configService.dbDatabase,
-        entities: [TestEntity, BoardEntity, CommentEntity],
+        entities: [...ALL_ENTITIES],
         synchronize: configService.dbSync, // 개발 환경에서만 사용, 프로덕션에서는 false로 설정
       }),
       inject: [CustomConfigService],
     }),
-    TypeOrmModule.forFeature([TestEntity, BoardEntity, CommentEntity]),
+    TypeOrmModule.forFeature([...ALL_ENTITIES]),
   ],
   providers: [
     {
@@ -35,16 +34,8 @@ import { DatabaseService } from './database.service';
       },
       inject: [DataSource],
     },
-    TestRepository2,
-    BoardRepository,
-    CommentRepository,
+    ...ALL_REPOSITORIES,
   ],
-  exports: [
-    TypeOrmModule,
-    DatabaseService,
-    TestRepository2,
-    BoardRepository,
-    CommentRepository,
-  ],
+  exports: [TypeOrmModule, DatabaseService, ...ALL_REPOSITORIES],
 })
 export class DatabaseModule {}
