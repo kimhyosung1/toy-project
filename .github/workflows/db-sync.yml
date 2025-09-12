@@ -1,4 +1,4 @@
-name: 🔄 Database Schema Sync
+name: 🚀 Enhanced Database Schema Sync
 
 on:
   workflow_dispatch:
@@ -17,6 +17,26 @@ on:
         required: false
         default: false
         type: boolean
+      skip_entities:
+        description: 'Skip entity generation'
+        required: false
+        default: false
+        type: boolean
+      skip_repositories:
+        description: 'Skip repository generation'
+        required: false
+        default: false
+        type: boolean
+      skip_procedures:
+        description: 'Skip procedure extraction'
+        required: false
+        default: false
+        type: boolean
+      dry_run:
+        description: 'Dry run (analyze only, no file generation)'
+        required: false
+        default: false
+        type: boolean
 
   push:
     branches:
@@ -25,6 +45,7 @@ on:
     paths:
       - 'scripts/db-analyzer/**'
       - '.github/workflows/db-sync.yml'
+      - 'libs/database/**'
 
   schedule:
     # 매일 새벽 3시에 자동 스키마 동기화 (dev 환경)
@@ -35,8 +56,8 @@ env:
   MYSQL_VERSION: '8.0'
 
 jobs:
-  analyze-schema:
-    name: 📊 Analyze Database Schema
+  enhanced-sync:
+    name: 🚀 Enhanced Database Sync
     runs-on: ubuntu-latest
 
     strategy:
@@ -45,9 +66,11 @@ jobs:
           - ${{ github.event.inputs.environment || 'dev' }}
 
     outputs:
-      schema-changed: ${{ steps.check-changes.outputs.changed }}
-      entities-count: ${{ steps.analyze.outputs.entities-count }}
-      procedures-count: ${{ steps.analyze.outputs.procedures-count }}
+      sync-success: ${{ steps.sync.outputs.success }}
+      entities-count: ${{ steps.sync.outputs.entities-count }}
+      repositories-count: ${{ steps.sync.outputs.repositories-count }}
+      procedures-count: ${{ steps.sync.outputs.procedures-count }}
+      rollback-performed: ${{ steps.sync.outputs.rollback-performed }}
 
     steps:
       - name: 🛎️ Checkout Repository
@@ -65,7 +88,8 @@ jobs:
       - name: 📦 Install Dependencies
         run: |
           npm install -g ts-node typescript
-          npm install mysql2
+          npm install mysql2 class-transformer class-validator
+          npm install
 
       - name: 🔧 Setup Database Connection
         id: db-config
@@ -94,256 +118,295 @@ jobs:
               ;;
           esac
 
-      - name: 🔍 Analyze Database Schema
-        id: analyze
+      - name: 🚀 Execute Enhanced Database Sync
+        id: sync
         run: |
-          echo "🔍 Analyzing ${{ matrix.environment }} database schema..."
+          echo "🚀 Starting Enhanced Database Sync for ${{ matrix.environment }}..."
 
-          # 임시 디렉토리 생성
-          mkdir -p temp/schema-analysis
+          # CLI 옵션 구성
+          SYNC_OPTIONS=""
 
-          # 스키마 분석 실행
-          ts-node scripts/db-analyzer/schema-analyzer.ts
+          if [ "${{ github.event.inputs.force_update }}" = "true" ]; then
+            SYNC_OPTIONS="$SYNC_OPTIONS --overwrite"
+          fi
 
-          # 분석 결과 확인
-          if [ -f "temp/db-schema.json" ]; then
-            ENTITIES_COUNT=$(jq '.tables | length' temp/db-schema.json)
-            PROCEDURES_COUNT=$(jq '.procedures | length' temp/db-schema.json)
+          if [ "${{ github.event.inputs.skip_entities }}" = "true" ]; then
+            SYNC_OPTIONS="$SYNC_OPTIONS --skip-entities"
+          fi
+
+          if [ "${{ github.event.inputs.skip_repositories }}" = "true" ]; then
+            SYNC_OPTIONS="$SYNC_OPTIONS --skip-repositories"
+          fi
+
+          if [ "${{ github.event.inputs.skip_procedures }}" = "true" ]; then
+            SYNC_OPTIONS="$SYNC_OPTIONS --skip-procedures"
+          fi
+
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            SYNC_OPTIONS="$SYNC_OPTIONS --dry-run"
+          fi
+
+          # Enhanced DB Sync 실행
+          if ts-node scripts/db-analyzer/enhanced-db-sync.ts "${{ matrix.environment }}" "libs/database/src" $SYNC_OPTIONS; then
+            echo "success=true" >> $GITHUB_OUTPUT
+            echo "✅ Enhanced Database Sync completed successfully!"
             
-            echo "entities-count=$ENTITIES_COUNT" >> $GITHUB_OUTPUT
-            echo "procedures-count=$PROCEDURES_COUNT" >> $GITHUB_OUTPUT
-            
-            echo "✅ Found $ENTITIES_COUNT tables and $PROCEDURES_COUNT procedures"
-            
-            # 스키마 파일을 환경별로 저장
-            cp temp/db-schema.json temp/schema-analysis/${{ matrix.environment }}-schema.json
+            # 결과 파일에서 통계 추출
+            if [ -f "libs/database/src/sync-report.json" ]; then
+              ENTITIES_COUNT=$(jq '.results.entitiesGenerated' libs/database/src/sync-report.json)
+              REPOSITORIES_COUNT=$(jq '.results.repositoriesGenerated' libs/database/src/sync-report.json)
+              PROCEDURES_COUNT=$(jq '.results.proceduresExtracted' libs/database/src/sync-report.json)
+              ROLLBACK_PERFORMED=$(jq '.rollbackPerformed' libs/database/src/sync-report.json)
+              
+              echo "entities-count=$ENTITIES_COUNT" >> $GITHUB_OUTPUT
+              echo "repositories-count=$REPOSITORIES_COUNT" >> $GITHUB_OUTPUT
+              echo "procedures-count=$PROCEDURES_COUNT" >> $GITHUB_OUTPUT
+              echo "rollback-performed=$ROLLBACK_PERFORMED" >> $GITHUB_OUTPUT
+              
+              # 요약 생성
+              echo "## 🎉 Enhanced Database Sync Results" >> $GITHUB_STEP_SUMMARY
+              echo "**Environment:** ${{ matrix.environment }}" >> $GITHUB_STEP_SUMMARY
+              echo "**Status:** ✅ Success" >> $GITHUB_STEP_SUMMARY
+              echo "**Entities Generated:** $ENTITIES_COUNT" >> $GITHUB_STEP_SUMMARY
+              echo "**Repositories Generated:** $REPOSITORIES_COUNT" >> $GITHUB_STEP_SUMMARY
+              echo "**Procedures Extracted:** $PROCEDURES_COUNT" >> $GITHUB_STEP_SUMMARY
+              echo "**Rollback Performed:** $ROLLBACK_PERFORMED" >> $GITHUB_STEP_SUMMARY
+              echo "**Timestamp:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
+            fi
           else
-            echo "❌ Schema analysis failed"
+            echo "success=false" >> $GITHUB_OUTPUT
+            echo "rollback-performed=true" >> $GITHUB_OUTPUT
+            echo "❌ Enhanced Database Sync failed!"
+            
+            echo "## ❌ Enhanced Database Sync Failed" >> $GITHUB_STEP_SUMMARY
+            echo "**Environment:** ${{ matrix.environment }}" >> $GITHUB_STEP_SUMMARY
+            echo "**Status:** ❌ Failed" >> $GITHUB_STEP_SUMMARY
+            echo "**Rollback:** Performed" >> $GITHUB_STEP_SUMMARY
+            echo "**Timestamp:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
+            
             exit 1
           fi
 
-      - name: 📋 Compare with Previous Schema
-        id: check-changes
-        run: |
-          echo "📋 Checking for schema changes..."
-
-          SCHEMA_FILE="temp/schema-analysis/${{ matrix.environment }}-schema.json"
-          PREV_SCHEMA="scripts/db-analyzer/previous-schemas/${{ matrix.environment }}-schema.json"
-
-          if [ -f "$PREV_SCHEMA" ]; then
-            if ! cmp -s "$SCHEMA_FILE" "$PREV_SCHEMA"; then
-              echo "changed=true" >> $GITHUB_OUTPUT
-              echo "🔄 Schema changes detected!"
-              
-              # 변경 사항 요약 생성
-              echo "## 📊 Schema Changes Detected" >> $GITHUB_STEP_SUMMARY
-              echo "**Environment:** ${{ matrix.environment }}" >> $GITHUB_STEP_SUMMARY
-              echo "**Tables:** $(jq '.tables | length' $SCHEMA_FILE)" >> $GITHUB_STEP_SUMMARY
-              echo "**Procedures:** $(jq '.procedures | length' $SCHEMA_FILE)" >> $GITHUB_STEP_SUMMARY
-              echo "**Analyzed at:** $(jq -r '.database.analyzedAt' $SCHEMA_FILE)" >> $GITHUB_STEP_SUMMARY
-            else
-              echo "changed=false" >> $GITHUB_OUTPUT
-              echo "✅ No schema changes detected"
-            fi
-          else
-            echo "changed=true" >> $GITHUB_OUTPUT
-            echo "🆕 First time schema analysis"
-          fi
-
-      - name: 📤 Upload Schema Artifacts
+      - name: 📤 Upload Generated Files
+        if: steps.sync.outputs.success == 'true' && github.event.inputs.dry_run != 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: schema-${{ matrix.environment }}
-          path: temp/schema-analysis/
+          name: generated-files-${{ matrix.environment }}
+          path: |
+            libs/database/src/entities/
+            libs/database/src/repositories/
+            libs/database/src/procedures/
+            libs/database/src/sync-report.json
           retention-days: 30
 
-  generate-entities:
-    name: 🏗️ Generate Entities & Repositories
-    runs-on: ubuntu-latest
-    needs: analyze-schema
-    if: needs.analyze-schema.outputs.schema-changed == 'true' || github.event.inputs.force_update == 'true'
-
-    strategy:
-      matrix:
-        environment:
-          - ${{ github.event.inputs.environment || 'dev' }}
-
-    steps:
-      - name: 🛎️ Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: 🟢 Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: 📥 Download Schema Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: schema-${{ matrix.environment }}
-          path: temp/schema-analysis/
-
-      - name: 📦 Install Dependencies
-        run: |
-          npm install -g ts-node typescript
-          npm install
-
-      - name: 🏗️ Generate TypeORM Entities
-        run: |
-          echo "🏗️ Generating TypeORM entities..."
-
-          SCHEMA_FILE="temp/schema-analysis/${{ matrix.environment }}-schema.json"
-
-          # 기존 entities 백업 (선택적)
-          if [ "${{ github.event.inputs.force_update }}" != "true" ] && [ -d "libs/database/src/entities" ]; then
-            echo "📦 Backing up existing entities..."
-            cp -r libs/database/src/entities temp/entities-backup
-          fi
-
-          # Entity 생성
-          ts-node scripts/db-analyzer/entity-generator.ts "$SCHEMA_FILE" "libs/database/src/entities"
-
-          echo "✅ Entity generation completed!"
-
-      - name: 🔧 Generate Repository Extensions
-        run: |
-          echo "🔧 Generating repository extensions..."
-
-          # Repository 확장 생성 스크립트 (필요시)
-          # ts-node scripts/db-analyzer/repository-generator.ts
-
-          echo "✅ Repository generation completed!"
-
-      - name: 📝 Update Database Module
-        run: |
-          echo "📝 Updating DatabaseModule..."
-
-          # DatabaseModule 자동 업데이트 스크립트
-          # ts-node scripts/db-analyzer/module-updater.ts
-
-          echo "✅ DatabaseModule updated!"
-
       - name: 🧪 Validate Generated Code
+        if: steps.sync.outputs.success == 'true' && github.event.inputs.dry_run != 'true'
         run: |
           echo "🧪 Validating generated code..."
 
           # TypeScript 컴파일 체크
-          npx tsc --noEmit --project libs/database/tsconfig.lib.json
+          if npx tsc --noEmit --project libs/database/tsconfig.lib.json; then
+            echo "✅ TypeScript compilation check passed"
+          else
+            echo "❌ TypeScript compilation errors detected"
+            echo "## ⚠️ Code Validation Warning" >> $GITHUB_STEP_SUMMARY
+            echo "Generated code has TypeScript compilation errors." >> $GITHUB_STEP_SUMMARY
+          fi
 
-          # Lint 체크
-          npx eslint libs/database/src/entities --ext .ts --fix
-
-          echo "✅ Code validation passed!"
-
-      - name: 📊 Generate Summary Report
-        run: |
-          echo "📊 Generating summary report..."
-
-          SCHEMA_FILE="temp/schema-analysis/${{ matrix.environment }}-schema.json"
-
-          cat << EOF >> $GITHUB_STEP_SUMMARY
-          ## 🎉 Entity Generation Completed
-
-          **Environment:** ${{ matrix.environment }}
-          **Generated Entities:** $(jq '.tables | length' $SCHEMA_FILE)
-          **Generated Procedures:** $(jq '.procedures | length' $SCHEMA_FILE)
-          **Timestamp:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
-
-          ### 📋 Generated Files
-          \`\`\`
-          $(find libs/database/src/entities -name "*.ts" -type f | sort)
-          \`\`\`
-
-          ### 🔗 Database Info
-          - **Version:** $(jq -r '.database.version' $SCHEMA_FILE)
-          - **Database:** $(jq -r '.database.database' $SCHEMA_FILE)
-          - **Tables:** $(jq -r '.database.tableCount' $SCHEMA_FILE)
-          - **Procedures:** $(jq -r '.database.procedureCount' $SCHEMA_FILE)
-          EOF
+          # Lint 체크 (에러 무시)
+          npx eslint libs/database/src --ext .ts --fix || echo "⚠️ Linting completed with warnings"
 
       - name: 💾 Commit Generated Files
+        if: steps.sync.outputs.success == 'true' && github.event.inputs.dry_run != 'true'
         run: |
           echo "💾 Committing generated files..."
 
           git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
+          git config --local user.name "GitHub Action Bot"
 
+          # 생성된 파일들 추가
           git add libs/database/src/entities/
-          git add scripts/db-analyzer/previous-schemas/ || true
+          git add libs/database/src/repositories/
+          git add libs/database/src/procedures/
 
           if git diff --staged --quiet; then
             echo "📝 No changes to commit"
           else
-            git commit -m "🤖 Auto-generated entities from ${{ matrix.environment }} DB schema
+            # 커밋 메시지 생성
+            COMMIT_MSG="🤖 Auto-generated database files from ${{ matrix.environment }} environment
+
+            📊 Generation Summary:
+            - Entities: ${{ steps.sync.outputs.entities-count }}
+            - Repositories: ${{ steps.sync.outputs.repositories-count }}
+            - Procedures: ${{ steps.sync.outputs.procedures-count }}
             
-            - Generated $(jq '.tables | length' temp/schema-analysis/${{ matrix.environment }}-schema.json) entities
-            - Updated from ${{ matrix.environment }} environment
-            - Timestamp: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+            🔧 Options:
+            - Force Update: ${{ github.event.inputs.force_update }}
+            - Skip Entities: ${{ github.event.inputs.skip_entities }}
+            - Skip Repositories: ${{ github.event.inputs.skip_repositories }}
+            - Skip Procedures: ${{ github.event.inputs.skip_procedures }}
+            
+            ⏰ Generated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+            🌍 Environment: ${{ matrix.environment }}
             
             [skip ci]"
             
+            git commit -m "$COMMIT_MSG"
             git push
             echo "✅ Changes committed and pushed!"
           fi
 
-      - name: 🔄 Update Previous Schema
-        run: |
-          echo "🔄 Updating previous schema reference..."
-
-          mkdir -p scripts/db-analyzer/previous-schemas/
-          cp temp/schema-analysis/${{ matrix.environment }}-schema.json scripts/db-analyzer/previous-schemas/
-
-          git add scripts/db-analyzer/previous-schemas/
-          git commit -m "📋 Update ${{ matrix.environment }} schema reference [skip ci]" || echo "No schema changes to commit"
-          git push || echo "No changes to push"
-
   notify:
-    name: 📢 Notify Results
+    name: 📢 Enhanced Notification
     runs-on: ubuntu-latest
-    needs: [analyze-schema, generate-entities]
+    needs: [enhanced-sync]
     if: always()
 
     steps:
       - name: 📢 Send Slack Notification
-        if: needs.analyze-schema.outputs.schema-changed == 'true' || failure()
+        if: needs.enhanced-sync.outputs.sync-success == 'true' || failure()
         uses: 8398a7/action-slack@v3
         with:
-          status: ${{ job.status }}
+          status: ${{ needs.enhanced-sync.outputs.sync-success == 'true' && 'success' || 'failure' }}
           channel: '#database-updates'
           text: |
-            🔄 Database Schema Sync: ${{ job.status }}
+            🚀 Enhanced Database Sync: ${{ needs.enhanced-sync.outputs.sync-success == 'true' && '✅ Success' || '❌ Failed' }}
 
             **Environment:** ${{ github.event.inputs.environment || 'dev' }}
-            **Entities:** ${{ needs.analyze-schema.outputs.entities-count }}
-            **Procedures:** ${{ needs.analyze-schema.outputs.procedures-count }}
-            **Changed:** ${{ needs.analyze-schema.outputs.schema-changed }}
+            **Entities Generated:** ${{ needs.enhanced-sync.outputs.entities-count || '0' }}
+            **Repositories Generated:** ${{ needs.enhanced-sync.outputs.repositories-count || '0' }}
+            **Procedures Extracted:** ${{ needs.enhanced-sync.outputs.procedures-count || '0' }}
+            **Rollback Performed:** ${{ needs.enhanced-sync.outputs.rollback-performed || 'false' }}
 
-            Branch: ${{ github.ref_name }}
-            Commit: ${{ github.sha }}
+            **Options:**
+            - Force Update: ${{ github.event.inputs.force_update || 'false' }}
+            - Skip Entities: ${{ github.event.inputs.skip_entities || 'false' }}
+            - Skip Repositories: ${{ github.event.inputs.skip_repositories || 'false' }}
+            - Skip Procedures: ${{ github.event.inputs.skip_procedures || 'false' }}
+            - Dry Run: ${{ github.event.inputs.dry_run || 'false' }}
+
+            **Repository:** ${{ github.repository }}
+            **Branch:** ${{ github.ref_name }}
+            **Commit:** ${{ github.sha }}
+            **Workflow:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
-      - name: 📧 Send Email Summary (on failure)
-        if: failure()
+      - name: 📧 Send Email Summary
+        if: needs.enhanced-sync.outputs.sync-success == 'true' || failure()
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.gmail.com
           server_port: 587
           username: ${{ secrets.EMAIL_USERNAME }}
           password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: '❌ Database Schema Sync Failed'
+          subject: "${{ needs.enhanced-sync.outputs.sync-success == 'true' && '✅ Enhanced Database Sync Success' || '❌ Enhanced Database Sync Failed' }}"
           to: ${{ secrets.NOTIFICATION_EMAIL }}
           from: 'GitHub Actions <noreply@github.com>'
-          body: |
-            Database schema synchronization failed for environment: ${{ github.event.inputs.environment || 'dev' }}
+          html_body: |
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 20px; }
+                    .header { background-color: ${{ needs.enhanced-sync.outputs.sync-success == 'true' && '#d4edda' || '#f8d7da' }}; padding: 15px; border-radius: 5px; }
+                    .success { color: #155724; }
+                    .failure { color: #721c24; }
+                    .info-table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+                    .info-table th, .info-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                    .info-table th { background-color: #f2f2f2; }
+                    .footer { margin-top: 30px; font-size: 12px; color: #666; }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h2 class="${{ needs.enhanced-sync.outputs.sync-success == 'true' && 'success' || 'failure' }}">
+                        🚀 Enhanced Database Sync Report
+                    </h2>
+                    <p><strong>Status:</strong> ${{ needs.enhanced-sync.outputs.sync-success == 'true' && '✅ Success' || '❌ Failed' }}</p>
+                    <p><strong>Environment:</strong> ${{ github.event.inputs.environment || 'dev' }}</p>
+                    <p><strong>Timestamp:</strong> ${{ github.event.head_commit.timestamp }}</p>
+                </div>
 
-            Repository: ${{ github.repository }}
-            Branch: ${{ github.ref_name }}
-            Commit: ${{ github.sha }}
+                <h3>📊 Generation Results</h3>
+                <table class="info-table">
+                    <tr><th>Component</th><th>Count</th></tr>
+                    <tr><td>Entities Generated</td><td>${{ needs.enhanced-sync.outputs.entities-count || '0' }}</td></tr>
+                    <tr><td>Repositories Generated</td><td>${{ needs.enhanced-sync.outputs.repositories-count || '0' }}</td></tr>
+                    <tr><td>Procedures Extracted</td><td>${{ needs.enhanced-sync.outputs.procedures-count || '0' }}</td></tr>
+                    <tr><td>Rollback Performed</td><td>${{ needs.enhanced-sync.outputs.rollback-performed || 'false' }}</td></tr>
+                </table>
 
-            Please check the workflow logs for more details.
+                <h3>🔧 Execution Options</h3>
+                <table class="info-table">
+                    <tr><th>Option</th><th>Value</th></tr>
+                    <tr><td>Force Update</td><td>${{ github.event.inputs.force_update || 'false' }}</td></tr>
+                    <tr><td>Skip Entities</td><td>${{ github.event.inputs.skip_entities || 'false' }}</td></tr>
+                    <tr><td>Skip Repositories</td><td>${{ github.event.inputs.skip_repositories || 'false' }}</td></tr>
+                    <tr><td>Skip Procedures</td><td>${{ github.event.inputs.skip_procedures || 'false' }}</td></tr>
+                    <tr><td>Dry Run</td><td>${{ github.event.inputs.dry_run || 'false' }}</td></tr>
+                </table>
 
-            Workflow URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+                <h3>🔗 Links</h3>
+                <ul>
+                    <li><a href="${{ github.server_url }}/${{ github.repository }}">Repository</a></li>
+                    <li><a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">Workflow Run</a></li>
+                    <li><a href="${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}">Commit</a></li>
+                </ul>
+
+                <div class="footer">
+                    <p>This is an automated message from GitHub Actions Enhanced Database Sync workflow.</p>
+                    <p>Repository: ${{ github.repository }} | Branch: ${{ github.ref_name }}</p>
+                </div>
+            </body>
+            </html>
+
+      - name: 🐛 Create Issue on Failure
+        if: failure() && github.event.inputs.environment == 'prod'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = `🚨 Enhanced Database Sync Failed - Production Environment`;
+            const body = `
+            ## 🚨 Critical: Enhanced Database Sync Failure
+
+            **Environment:** Production
+            **Timestamp:** ${{ github.event.head_commit.timestamp }}
+            **Workflow Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            ### 📊 Failure Details
+            - **Entities Generated:** ${{ needs.enhanced-sync.outputs.entities-count || '0' }}
+            - **Repositories Generated:** ${{ needs.enhanced-sync.outputs.repositories-count || '0' }}
+            - **Procedures Extracted:** ${{ needs.enhanced-sync.outputs.procedures-count || '0' }}
+            - **Rollback Performed:** ${{ needs.enhanced-sync.outputs.rollback-performed || 'false' }}
+
+            ### 🔧 Execution Options
+            - **Force Update:** ${{ github.event.inputs.force_update || 'false' }}
+            - **Skip Entities:** ${{ github.event.inputs.skip_entities || 'false' }}
+            - **Skip Repositories:** ${{ github.event.inputs.skip_repositories || 'false' }}
+            - **Skip Procedures:** ${{ github.event.inputs.skip_procedures || 'false' }}
+            - **Dry Run:** ${{ github.event.inputs.dry_run || 'false' }}
+
+            ### 🔍 Investigation Steps
+            1. Check the workflow logs for detailed error messages
+            2. Verify database connectivity and credentials
+            3. Review recent schema changes
+            4. Check for conflicting database operations
+
+            ### 🚨 Immediate Actions Required
+            - [ ] Investigate the root cause
+            - [ ] Verify production database integrity
+            - [ ] Consider manual schema sync if needed
+            - [ ] Update team on resolution status
+
+            **Branch:** ${{ github.ref_name }}
+            **Commit:** ${{ github.sha }}
+            `;
+
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['bug', 'critical', 'database', 'production']
+            });

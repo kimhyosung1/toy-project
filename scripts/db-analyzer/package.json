@@ -1,33 +1,42 @@
 {
-  "name": "db-analyzer",
-  "version": "1.0.0",
-  "description": "MySQL Database Schema Analyzer and Entity Generator",
-  "main": "schema-analyzer.ts",
+  "name": "enhanced-db-analyzer",
+  "version": "2.0.0",
+  "description": "Enhanced Database Schema Analyzer with Auto-Generation",
+  "main": "enhanced-db-sync.ts",
   "scripts": {
-    "analyze": "ts-node schema-analyzer.ts",
-    "generate-entities": "ts-node entity-generator.ts",
-    "generate-sp": "ts-node sp-repository-generator.ts",
-    "analyze-and-generate": "npm run analyze && npm run generate-entities && npm run generate-sp",
-    "build": "tsc",
-    "dev": "ts-node-dev --respawn --transpile-only schema-analyzer.ts"
+    "sync": "ts-node enhanced-db-sync.ts",
+    "sync:dev": "NODE_ENV=dev ts-node enhanced-db-sync.ts dev",
+    "sync:qa": "NODE_ENV=qa ts-node enhanced-db-sync.ts qa",
+    "sync:prod": "NODE_ENV=prod ts-node enhanced-db-sync.ts prod",
+    "sync:dry-run": "ts-node enhanced-db-sync.ts dev libs/database/src --dry-run",
+    "analyze": "ts-node enhanced-schema-analyzer.ts",
+    "generate:entities": "ts-node enhanced-entity-generator.ts",
+    "generate:repositories": "ts-node enhanced-repository-generator.ts",
+    "extract:procedures": "ts-node procedure-extractor.ts",
+    "test": "echo \"No tests specified\" && exit 0"
   },
+  "keywords": [
+    "database",
+    "schema",
+    "typeorm",
+    "entity",
+    "repository",
+    "mysql",
+    "automation"
+  ],
+  "author": "Enhanced DB Sync Team",
+  "license": "MIT",
   "dependencies": {
     "mysql2": "^3.6.0",
-    "typescript": "^5.0.0",
-    "ts-node": "^10.9.0"
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
-    "ts-node-dev": "^2.0.0"
+    "typescript": "^5.0.0",
+    "ts-node": "^10.9.0"
   },
-  "keywords": [
-    "mysql",
-    "typeorm",
-    "entity-generator",
-    "schema-analyzer",
-    "database",
-    "automation"
-  ],
-  "author": "GitHub Actions Auto-Generator",
-  "license": "MIT"
+  "engines": {
+    "node": ">=18.0.0"
+  }
 }
