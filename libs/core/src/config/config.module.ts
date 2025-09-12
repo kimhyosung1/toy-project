@@ -10,11 +10,10 @@ import { CustomConfigService } from './config.service';
       isGlobal: true,
       ignoreEnvFile: false,
 
-      // 이 설정은 현재 작업 디렉토리 (process.cwd()) 내에 있는 env/ 폴더에서 NODE_ENV 값에 맞는 환경 파일을 찾는다.
-      // envFilePath: [`${process.cwd()}/env/.${process.env.NODE_ENV}.env`],
-
-      // 로컬실행시 현재 작업 디렉토리에서 .env 파일을 찾는다.
-      envFilePath: [`${process.cwd()}/.env`],
+      // 환경별 설정 파일 경로 (기본값: dev)
+      envFilePath: [
+        `${process.cwd()}/env/${process.env.NODE_ENV || 'dev'}.env`,
+      ],
     }),
   ],
   providers: [CustomConfigService],

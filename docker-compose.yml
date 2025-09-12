@@ -1,0 +1,68 @@
+# 공통 환경변수
+name: toy-project
+
+x-common-env: &common-env
+  NODE_ENV: ${NODE_ENV:-dev}
+  DB_HOST: ${DB_HOST:-localhost}
+  DB_PORT: ${DB_PORT:-3306}
+  DB_USERNAME: ${DB_USERNAME:-root}
+  DB_PASSWORD: ${DB_PASSWORD:-}
+  DB_DATABASE: ${DB_DATABASE:-public}
+  REDIS_HOST: ${REDIS_HOST:-localhost}
+  REDIS_PORT: ${REDIS_PORT:-6379}
+
+services:
+  gateway:
+    build:
+      context: .
+      args:
+        NODE_ENV: ${NODE_ENV:-dev}
+        TARGET_APPS: gateway
+    container_name: gateway
+    ports:
+      - '${GATEWAY_SERVICE_PORT:-3000}:3000'
+    environment:
+      <<: *common-env
+    restart: unless-stopped
+
+  board:
+    build:
+      context: .
+      args:
+        NODE_ENV: ${NODE_ENV:-dev}
+        TARGET_APPS: board
+    container_name: board
+    ports:
+      - '${BOARD_SERVICE_PORT:-3001}:3001'
+    environment:
+      <<: *common-env
+    restart: unless-stopped
+    command: ['node', 'dist/apps/board/main.js']
+
+  notification:
+    build:
+      context: .
+      args:
+        NODE_ENV: ${NODE_ENV:-dev}
+        TARGET_APPS: notification
+    container_name: notification
+    ports:
+      - '${NOTIFICATION_SERVICE_PORT:-3002}:3002'
+    environment:
+      <<: *common-env
+    restart: unless-stopped
+    command: ['node', 'dist/apps/notification/main.js']
+
+  test2:
+    build:
+      context: .
+      args:
+        NODE_ENV: ${NODE_ENV:-dev}
+        TARGET_APPS: test2
+    container_name: test2
+    ports:
+      - '${TEST2_SERVICE_PORT:-3003}:3003'
+    environment:
+      <<: *common-env
+    restart: unless-stopped
+    command: ['node', 'dist/apps/test2/main.js']

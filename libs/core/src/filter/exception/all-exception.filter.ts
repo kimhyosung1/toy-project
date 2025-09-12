@@ -27,11 +27,9 @@ export class AllExceptionFilter implements ExceptionFilter {
   catch(exception: any, host: ArgumentsHost): any {
     const hostType = host.getType();
 
-    console.log('🚨 AllExceptionFilter에서 예외 처리:', {
-      type: hostType,
-      exception: exception?.message || exception,
-      stack: exception?.stack,
-    });
+    // RPC 호출이 Gateway로 전파되어 HTTP로 다시 처리되는 경우 구분
+    const isRpcErrorPropagated =
+      hostType === 'http' && exception instanceof RpcException;
 
     // HTTP 환경 (게이트웨이, HTTP API)
     if (hostType === 'http') {
@@ -91,7 +89,12 @@ export class AllExceptionFilter implements ExceptionFilter {
       message,
     };
 
-    console.log('📤 HTTP 응답:', responseObj);
+    // RPC에서 전파된 경우와 순수 HTTP 에러 구분
+    const isFromRpc = exception instanceof RpcException;
+    console.log(
+      `📤 [HTTP] ${isFromRpc ? '(RPC 에러 변환)' : '(HTTP 직접 에러)'} 응답:`,
+      responseObj,
+    );
 
     if (this.httpAdapterHost?.httpAdapter && response) {
       this.httpAdapterHost.httpAdapter.reply(response, responseObj, statusCode);
@@ -140,7 +143,7 @@ export class AllExceptionFilter implements ExceptionFilter {
       data: data || null,
     };
 
-    console.log('📤 RPC 응답:', errorResponse);
+    console.log('📤 [RPC] (마이크로서비스 에러) 응답:', errorResponse);
 
     return throwError(() => errorResponse);
   }

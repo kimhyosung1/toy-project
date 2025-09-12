@@ -16,7 +16,7 @@
     "start:dev:gateway": "NODE_ENV=dev nest start gateway --watch --debug --builder swc",
     "start:dev:board": "NODE_ENV=dev nest start board --watch --debug --builder swc",
     "start:dev:notification": "NODE_ENV=dev nest start notification --watch --debug --builder swc",
-    "start:dev:debug:test2": "NODE_ENV=dev nest start test2 --watch --debug --builder swc",
+    "start:dev:test2": "NODE_ENV=dev nest start test2 --watch --debug --builder swc",
     "start:prod": "node dist/apps/toy-project/main",
     "start:prod:gateway": "node dist/apps/gateway/main",
     "start:prod:board": "node dist/apps/board/main",
@@ -26,7 +26,10 @@
     "test:watch": "jest --watch --config jest.config.js",
     "test:cov": "jest --coverage --config jest.config.js",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand --config jest.config.js",
-    "test:e2e": "jest --config ./jest.config.js apps/board/test/unit/board.e2e.spec.ts"
+    "test:e2e": "jest --config ./jest.config.js apps/board/test/unit/board.e2e.spec.ts",
+    "docker:dev": "./docker.sh dev",
+    "docker:qa": "./docker.sh qa --profile full",
+    "docker:prod": "./docker.sh prod"
   },
   "dependencies": {
     "@nestjs/bull": "^11.0.2",
