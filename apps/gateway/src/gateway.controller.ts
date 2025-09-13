@@ -31,17 +31,6 @@ export class GatewayController extends CommonProxyClient {
     return 'gateway api response test';
   }
 
-  @Get('test2/health-check')
-  @ApiOperation({ summary: 'test2 App Health Check API' })
-  @ApiOkResponse({ type: String })
-  public test2HealthCheck(@Req() req: Request) {
-    return this.requestRedirect(
-      CustomMessagePatterns.Test2HealthCheck,
-      this.Test2Client,
-      req,
-    );
-  }
-
   @Get('board/health-check')
   @ApiOperation({ summary: 'Board App Health Check API' })
   @ApiOkResponse({ type: String })
