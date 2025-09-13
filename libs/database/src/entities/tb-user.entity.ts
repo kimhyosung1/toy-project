@@ -3,29 +3,19 @@ import {
 } from 'typeorm';
 import { TbCommentEntity } from './tb-comment.entity';
 
-@Entity('tb_board')
-export class TbBoardEntity {
-  @PrimaryGeneratedColumn({ name: 'board_id' })
-  boardId: number;
+@Entity('tb_user')
+export class TbUserEntity {
+  @PrimaryGeneratedColumn({ name: 'user_id' })
+  userId: number;
 
   @Column({ length: 255 })
-  @Index('idx_title')
-  title: string;
-
-  @Column({ type: 'text' })
-  content: string;
-
-  @Column({ length: 50 })
-  author: string;
-
-  @Column({ length: 255 })
-  password: string;
+  name: string;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt?: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt?: Date;
-  @OneToMany(() => TbCommentEntity, (comment) => comment.board)
+  @OneToMany(() => TbCommentEntity, (comment) => comment.user)
   comments: TbCommentEntity[];
 }

@@ -4,12 +4,12 @@ import {
 
 @Entity('tb_test3')
 export class TbTest3Entity {
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ name: 'test3_id' })
   test3Id: number;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 }

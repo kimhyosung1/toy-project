@@ -1,14 +1,8 @@
 import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  ManyToOne,
-  OneToMany,
-  JoinColumn,
-  Index,
+  Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn,
 } from 'typeorm';
 import { TbBoardEntity } from './tb-board.entity';
+import { TbUserEntity } from './tb-user.entity';
 
 @Entity('tb_comment')
 export class TbCommentEntity {
@@ -21,17 +15,20 @@ export class TbCommentEntity {
 
   @Column({ name: 'parent_id', nullable: true })
   @Index('idx_parent_id')
-  parentId: number | null;
+  parentId?: number;
 
-  @Column({ type: 'varchar', length: 2000 })
+  @Column({ length: 2000 })
   content: string;
 
-  @Column({ type: 'varchar', length: 50 })
+  @Column({ length: 50 })
   author: string;
 
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  createdAt?: Date;
 
+  @Column({ name: 'user_id', nullable: true })
+  @Index('idx_user_id')
+  userId?: number;
   @ManyToOne(() => TbBoardEntity, (board) => board.comments, {
     onDelete: 'CASCADE',
   })
@@ -43,6 +40,12 @@ export class TbCommentEntity {
   })
   @JoinColumn({ name: 'parent_id' })
   parent: TbCommentEntity;
+
+  @ManyToOne(() => TbUserEntity, (user) => user.comments, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'user_id' })
+  user: TbUserEntity;
 
   @OneToMany(() => TbCommentEntity, (comment) => comment.parent)
   children: TbCommentEntity[];
