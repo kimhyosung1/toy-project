@@ -115,16 +115,20 @@ class EnhancedDbSync {
         return result;
       }
 
+      // 2.5. 삭제된 테이블 감지 및 Deprecate 처리
+      console.log('\n🗑️ Step 2: Checking for deleted tables...');
+      await this.handleDeletedTables(schemaResult);
+
       // 3. Entity 생성
       if (!this.options.skipEntities) {
-        console.log('\n🏗️ Step 2: Generating entities...');
+        console.log('\n🏗️ Step 3: Generating entities...');
         const entityFiles = await this.generateEntities(schemaResult);
         result.generatedFiles.entities = entityFiles;
       }
 
       // 4. Repository 생성
       if (!this.options.skipRepositories) {
-        console.log('\n🔧 Step 3: Generating repositories...');
+        console.log('\n🔧 Step 4: Generating repositories...');
         const repositoryFiles = await this.generateRepositories(schemaResult);
         result.generatedFiles.repositories = repositoryFiles;
       }
@@ -244,6 +248,191 @@ class EnhancedDbSync {
       return result;
     } finally {
       await analyzer.disconnect();
+    }
+  }
+
+  /**
+   * 삭제된 테이블 감지 및 Deprecate 처리
+   */
+  private async handleDeletedTables(
+    schemaResult: SchemaAnalysisResult,
+  ): Promise<void> {
+    try {
+      const entitiesDir = path.join(this.options.outputBaseDir, 'entities');
+      const repositoriesDir = path.join(
+        this.options.outputBaseDir,
+        'repositories',
+      );
+
+      // 현재 DB에 있는 테이블 이름들
+      const currentTables = new Set(
+        schemaResult.tables.map((table) => table.tableName),
+      );
+
+      // 기존 Entity 파일들 확인
+      const existingEntityFiles =
+        await this.getExistingEntityFiles(entitiesDir);
+      const existingRepositoryFiles =
+        await this.getExistingRepositoryFiles(repositoriesDir);
+
+      // 삭제된 테이블들 찾기
+      const deletedTables = new Set<string>();
+
+      for (const entityFile of existingEntityFiles) {
+        const tableName = this.extractTableNameFromEntityFile(entityFile);
+        if (tableName && !currentTables.has(tableName)) {
+          deletedTables.add(tableName);
+        }
+      }
+
+      if (deletedTables.size > 0) {
+        console.log(
+          `   🗑️ Found ${deletedTables.size} deleted table(s): ${Array.from(deletedTables).join(', ')}`,
+        );
+
+        // Entity 파일들에 Deprecate 주석 추가
+        for (const tableName of deletedTables) {
+          await this.addDeprecateCommentToEntity(entitiesDir, tableName);
+          await this.addDeprecateCommentToRepository(
+            repositoriesDir,
+            tableName,
+          );
+        }
+      } else {
+        console.log('   ✅ No deleted tables found');
+      }
+    } catch (error) {
+      console.warn('   ⚠️ Failed to check for deleted tables:', error.message);
+    }
+  }
+
+  /**
+   * 기존 Entity 파일들 목록 가져오기
+   */
+  private async getExistingEntityFiles(entitiesDir: string): Promise<string[]> {
+    try {
+      const files = await fs.readdir(entitiesDir);
+      return files.filter(
+        (file) => file.endsWith('.entity.ts') && file !== 'index.ts',
+      );
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * 기존 Repository 파일들 목록 가져오기
+   */
+  private async getExistingRepositoryFiles(
+    repositoriesDir: string,
+  ): Promise<string[]> {
+    try {
+      const files = await fs.readdir(repositoriesDir);
+      return files.filter(
+        (file) => file.endsWith('.repository.ts') && file !== 'index.ts',
+      );
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Entity 파일명에서 테이블명 추출
+   */
+  private extractTableNameFromEntityFile(fileName: string): string | null {
+    // tb-board.entity.ts -> tb_board
+    const match = fileName.match(/^(.+)\.entity\.ts$/);
+    if (match) {
+      return match[1].replace(/-/g, '_');
+    }
+    return null;
+  }
+
+  /**
+   * Entity 파일에 Deprecate 주석 추가
+   */
+  private async addDeprecateCommentToEntity(
+    entitiesDir: string,
+    tableName: string,
+  ): Promise<void> {
+    const fileName = `${tableName.replace(/_/g, '-')}.entity.ts`;
+    const filePath = path.join(entitiesDir, fileName);
+
+    try {
+      const content = await fs.readFile(filePath, 'utf-8');
+
+      // 이미 @deprecated가 있는지 확인
+      if (content.includes('@deprecated')) {
+        console.log(`   ⚠️ ${fileName} already has @deprecated comment`);
+        return;
+      }
+
+      // @Entity 데코레이터 앞에 deprecate 주석 추가
+      const deprecateComment = `/**
+ * @deprecated This table has been deleted from the database.
+ * This entity is kept for backward compatibility but should not be used.
+ * 이 테이블은 데이터베이스에서 삭제되었습니다.
+ * 기존 코드 호환성을 위해 유지되지만 사용하지 마세요.
+ * 
+ * Deletion detected on: ${new Date().toISOString().split('T')[0]}
+ */`;
+
+      const updatedContent = content.replace(
+        /(@Entity\([^)]+\))/,
+        `${deprecateComment}\n$1`,
+      );
+
+      await fs.writeFile(filePath, updatedContent, 'utf-8');
+      console.log(`   🏷️ Added @deprecated to ${fileName}`);
+    } catch (error) {
+      console.warn(
+        `   ⚠️ Failed to add @deprecated to ${fileName}:`,
+        error.message,
+      );
+    }
+  }
+
+  /**
+   * Repository 파일에 Deprecate 주석 추가
+   */
+  private async addDeprecateCommentToRepository(
+    repositoriesDir: string,
+    tableName: string,
+  ): Promise<void> {
+    const fileName = `${tableName.replace(/_/g, '-')}.repository.ts`;
+    const filePath = path.join(repositoriesDir, fileName);
+
+    try {
+      const content = await fs.readFile(filePath, 'utf-8');
+
+      // 이미 @deprecated가 있는지 확인
+      if (content.includes('@deprecated')) {
+        console.log(`   ⚠️ ${fileName} already has @deprecated comment`);
+        return;
+      }
+
+      // @Injectable 데코레이터 앞에 deprecate 주석 추가
+      const deprecateComment = `/**
+ * @deprecated This repository is for a deleted table.
+ * This repository is kept for backward compatibility but should not be used.
+ * 이 리포지토리는 삭제된 테이블용입니다.
+ * 기존 코드 호환성을 위해 유지되지만 사용하지 마세요.
+ * 
+ * Deletion detected on: ${new Date().toISOString().split('T')[0]}
+ */`;
+
+      const updatedContent = content.replace(
+        /(@Injectable\(\))/,
+        `${deprecateComment}\n$1`,
+      );
+
+      await fs.writeFile(filePath, updatedContent, 'utf-8');
+      console.log(`   🏷️ Added @deprecated to ${fileName}`);
+    } catch (error) {
+      console.warn(
+        `   ⚠️ Failed to add @deprecated to ${fileName}:`,
+        error.message,
+      );
     }
   }
 

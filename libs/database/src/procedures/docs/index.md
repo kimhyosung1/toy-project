@@ -3,14 +3,14 @@
 > 🤖 Auto-generated documentation  
 > Environment: dev  
 > Database: public  
-> Generated: 2025-09-13T08:55:37.425Z
+> Generated: 2025-09-13T09:08:24.102Z
 
 ## 📊 Overview
 
 | Type | Count | Files |
 |------|-------|-------|
-| Stored Procedures | 4 | [procedures.md](./procedures.md) |
-| Functions | 3 | [functions.md](./functions.md) |
+| Stored Procedures | 5 | [procedures.md](./procedures.md) |
+| Functions | 4 | [functions.md](./functions.md) |
 
 ## 📁 File Structure
 
@@ -46,11 +46,13 @@ SELECT function_name(param1, param2) AS result;
 2. [`sp_hello_world1`](../procedures/sp_hello_world1.sql) - No description
 3. [`sp_hello_world2`](../procedures/sp_hello_world2.sql) - No description
 4. [`sp_hello_world3`](../procedures/sp_hello_world3.sql) - No description
+5. [`sp_hello_world4`](../procedures/sp_hello_world4.sql) - No description
 
 ### Functions
 1. [`fn_hello_world1`](../functions/fn_hello_world1.sql) - No description
 2. [`fn_hello_world2`](../functions/fn_hello_world2.sql) - No description
 3. [`fn_hello_world3`](../functions/fn_hello_world3.sql) - No description
+4. [`fn_hello_world4`](../functions/fn_hello_world4.sql) - No description
 
 ## 🔄 Auto-Generation
 
@@ -61,4 +63,4 @@ To regenerate:
 npm run db:sync
 ```
 
-Last updated: 2025-09-13T08:55:37.425Z
+Last updated: 2025-09-13T09:08:24.102Z

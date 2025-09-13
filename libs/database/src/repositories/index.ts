@@ -1,7 +1,7 @@
 // 🤖 Auto-generated repository exports
-// Generated at: 2025-09-13T08:55:37.420Z
+// Generated at: 2025-09-13T09:08:24.097Z
 // Environment: dev
-// Tables: 5
+// Tables: 4
 
 export * from './board.repository';
 export * from './comment.repository';

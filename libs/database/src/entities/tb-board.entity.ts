@@ -5,20 +5,35 @@ import { TbCommentEntity } from './tb-comment.entity';
 
 @Entity('tb_board')
 export class TbBoardEntity {
+  /**
+   * pk 값
+   */
   @PrimaryGeneratedColumn({ name: 'board_id' })
   boardId: number;
 
-  @Column({ length: 255 })
+  /**
+   * 제목임
+   */
+  @Column({ length: 255, comment: '제목임' })
   @Index('idx_title')
   title: string;
 
-  @Column({ type: 'text' })
+  /**
+   * 내용임
+   */
+  @Column({ type: 'text', comment: '내용임' })
   content: string;
 
-  @Column({ length: 50 })
+  /**
+   * 작성자임
+   */
+  @Column({ length: 50, comment: '작성자임' })
   author: string;
 
-  @Column({ length: 255 })
+  /**
+   * 비밀번호
+   */
+  @Column({ length: 255, comment: '비밀번호' })
   password: string;
 
   @CreateDateColumn({ name: 'created_at' })

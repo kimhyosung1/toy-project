@@ -1,19 +1,17 @@
 // 🤖 Auto-generated entity exports
-// Generated at: 2025-09-13T08:55:37.412Z
+// Generated at: 2025-09-13T09:08:24.091Z
 // Environment: dev
-// Tables: 5
+// Tables: 4
 
 export * from './tb-board.entity';
 export * from './tb-comment.entity';
-export * from './tb-keyword-notification.entity';
-export * from './tb-notification.entity';
+export * from './tb-test1.entity';
 export * from './tb-user.entity';
 
 // 🚀 자동화를 위한 엔티티 배열 export
 import { TbBoardEntity } from './tb-board.entity';
 import { TbCommentEntity } from './tb-comment.entity';
-import { TbKeywordNotificationEntity } from './tb-keyword-notification.entity';
-import { TbNotificationEntity } from './tb-notification.entity';
+import { TbTest1Entity } from './tb-test1.entity';
 import { TbUserEntity } from './tb-user.entity';
 
 /**
@@ -23,7 +21,6 @@ import { TbUserEntity } from './tb-user.entity';
 export const ALL_ENTITIES = [
   TbBoardEntity,
   TbCommentEntity,
-  TbKeywordNotificationEntity,
-  TbNotificationEntity,
+  TbTest1Entity,
   TbUserEntity,
 ];

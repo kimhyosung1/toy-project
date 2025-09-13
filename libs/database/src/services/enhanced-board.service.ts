@@ -4,7 +4,7 @@ import {
   BoardWithCommentCountDto,
   BoardStatisticsDto,
   StoredProcedureResultDto,
-} from '../dto/board-query.dto';
+} from '@app/global-dto';
 
 /**
  * 🚀 개선된 Raw SQL 쿼리 사용 예제 서비스
