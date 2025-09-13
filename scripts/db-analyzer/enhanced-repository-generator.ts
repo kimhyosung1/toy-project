@@ -5,14 +5,20 @@ import * as path from 'path';
 import { SchemaAnalysisResult, TableInfo } from './enhanced-schema-analyzer';
 
 /**
- * 🔧 Enhanced Repository Generator
+ * 🔧 Enhanced Repository Generator - 기본 CRUD 메서드 포함 Repository 자동 생성
  *
- * 기능:
- * - Repository 클래스 자동 생성
- * - 기본 CRUD 메서드 포함
- * - 커스텀 쿼리 메서드 생성
- * - 타입 안전성 보장
- * - 백업 및 롤백 기능
+ * 📋 핵심 기능:
+ * - Repository 클래스 자동 생성 (NestJS + TypeORM 패턴)
+ * - 기본 CRUD 메서드 포함 (create, findById, update, delete 등)
+ * - 커스텀 쿼리 메서드 생성 (검색, 페이징, 정렬)
+ * - 타입 안전성 보장 (Generic Repository<Entity> 패턴)
+ * - 백업 및 롤백 기능 (안전한 코드 생성)
+ *
+ * 🔄 생성 원리:
+ * - 기존 Repository 있으면 건너뛰기 (수동 코드 보존)
+ * - 새 테이블에 대해서만 Repository 생성
+ * - Entity 기반 타입 안전성 보장
+ * - 환경별 설정 지원
  */
 
 interface RepositoryGenerationOptions {
@@ -47,7 +53,15 @@ class EnhancedRepositoryGenerator {
   }
 
   /**
-   * Repository 생성 실행
+   * Repository 생성 실행 - 전체 Repository 파일 생성 프로세스
+   *
+   * 🔄 실행 순서:
+   * 1. 백업 생성: 기존 Repository 파일들 백업
+   * 2. 출력 디렉토리 준비: repositories/ 디렉토리 설정
+   * 3. Repository 파일 생성: 각 테이블별 Repository 생성
+   * 4. index.ts 업데이트: 모든 Repository export 및 ALL_REPOSITORIES 배열
+   *
+   * ⚠️ 에러 시 롤백: 백업에서 자동 복원
    */
   async generateRepositories(): Promise<void> {
     try {
@@ -154,7 +168,15 @@ class EnhancedRepositoryGenerator {
   }
 
   /**
-   * 개별 Repository 파일 생성
+   * 개별 Repository 파일 생성 - 기존 Repository 중복 방지 로직 포함
+   *
+   * 🔍 중복 방지 로직:
+   * 1. 같은 테이블을 처리하는 기존 Repository 검색
+   * 2. Entity import 경로를 통한 테이블 매핑 확인
+   * 3. 기존 Repository 있으면 생성 건너뛰기
+   * 4. 새 테이블에 대해서만 Repository 생성
+   *
+   * 💡 목적: 수동 작성된 Repository 보존 및 중복 방지
    */
   private async generateRepositoryFile(table: TableInfo): Promise<void> {
     const repositoryName = this.toPascalCase(table.tableName) + 'Repository';
@@ -181,7 +203,15 @@ class EnhancedRepositoryGenerator {
   }
 
   /**
-   * 같은 테이블을 다루는 기존 Repository 파일 찾기
+   * 같은 테이블을 다루는 기존 Repository 파일 찾기 - 지능형 중복 감지
+   *
+   * 🔍 감지 방법:
+   * 1. Repository 파일에서 Entity import 경로 추출
+   * 2. Entity 파일에서 @Entity 데코레이터의 테이블명 확인
+   * 3. 파일명 기반 테이블명 추정 (board.repository.ts → tb_board)
+   * 4. 직접 Repository 파일에서 @Entity 데코레이터 확인
+   *
+   * 💡 다단계 검증으로 정확한 중복 감지
    */
   private async findExistingRepositoryForTable(
     tableName: string,
@@ -260,7 +290,16 @@ class EnhancedRepositoryGenerator {
   }
 
   /**
-   * Repository 클래스 내용 생성
+   * Repository 클래스 내용 생성 - 완전한 NestJS Repository 클래스 코드 생성
+   *
+   * 🏗️ 생성 구성요소:
+   * 1. Import 문: NestJS, TypeORM, Entity import
+   * 2. 클래스 코멘트: 자동 생성 정보 포함
+   * 3. @Injectable 데코레이터: NestJS DI 지원
+   * 4. Constructor: @InjectRepository 를 통한 DI
+   * 5. 메서드들: CRUD 및 커스텀 메서드
+   *
+   * 💡 타입 안전성: Generic Repository<Entity> 패턴 사용
    */
   private generateRepositoryContent(table: TableInfo): string {
     const entityName = this.toPascalCase(table.tableName) + 'Entity';
@@ -348,7 +387,19 @@ import { ${entityName} } from '../entities/${entityFileName}.entity';`;
   }
 
   /**
-   * 기본 CRUD 메서드 생성
+   * 기본 CRUD 메서드 생성 - 표준 데이터베이스 작업 메서드 생성
+   *
+   * 🛠️ 생성 메서드:
+   * 1. create: 새 레코드 생성 (EntityManager 지원)
+   * 2. findById: Primary Key로 레코드 조회
+   * 3. findAll: 전체 레코드 조회 (옵션 지원)
+   * 4. findWithPagination: 페이징 지원 조회
+   * 5. update: 레코드 업데이트 (EntityManager 지원)
+   * 6. delete: 레코드 삭제 (EntityManager 지원)
+   * 7. count: 레코드 개수 조회
+   * 8. exists: 레코드 존재 여부 확인
+   *
+   * 💡 EntityManager 지원: 트랜잭션 내에서 사용 가능
    */
   private generateBasicMethods(table: TableInfo): string[] {
     const entityName = this.toPascalCase(table.tableName);
@@ -461,7 +512,18 @@ import { ${entityName} } from '../entities/${entityFileName}.entity';`;
   }
 
   /**
-   * 커스텀 메서드 생성
+   * 커스텀 메서드 생성 - 비즈니스 로직에 특화된 메서드 생성
+   *
+   * 🔍 생성 메서드 종류:
+   * 1. 텍스트 검색: searchBy{Column} - LIKE 검색 지원
+   * 2. 날짜 범위 검색: findByDateRange - BETWEEN 조건
+   * 3. 외래키 기반 조회: findBy{ReferencedTable}Id
+   * 4. Soft Delete: softDelete, findActive (삭제 날짜 컬럼 있을 때)
+   *
+   * 💡 자동 감지:
+   * - 검색 가능 컬럼: varchar, text 등 텍스트 타입
+   * - 날짜 컬럼: date, datetime, timestamp 타입
+   * - 외래키 관계: foreignKeys 정보 기반
    */
   private generateCustomMethods(table: TableInfo): string[] {
     const methods: string[] = [];
@@ -593,7 +655,16 @@ import { ${entityName} } from '../entities/${entityFileName}.entity';`;
   }
 
   /**
-   * index.ts 파일 업데이트
+   * index.ts 파일 업데이트 - 모든 Repository 자동 export 및 ALL_REPOSITORIES 배열 생성
+   *
+   * 📦 생성 내용:
+   * 1. 개별 Repository export: export * from './table-name.repository'
+   * 2. Repository import: ALL_REPOSITORIES 배열용 import 문
+   * 3. ALL_REPOSITORIES 배열: NestJS 모듈에서 사용할 모든 Repository 배열
+   * 4. @deprecated Repository 처리: export는 하지만 배열에서 제외
+   * 5. 메타데이터: 환경, 테이블 수 등 정보
+   *
+   * 💡 자동화 목적: 새 Repository 추가 시 수동 import 불필요
    */
   private async updateIndexFile(): Promise<void> {
     const indexPath = path.join(this.options.outputDir, 'index.ts');

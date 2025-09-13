@@ -5,14 +5,20 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 
 /**
- * 🚀 Enhanced Database Schema Analyzer
+ * 🚀 Enhanced Database Schema Analyzer - MySQL DB 구조 실시간 분석 시스템
  *
- * 기능:
- * - 테이블 스키마 분석 및 Entity 생성 정보 수집
- * - Stored Procedure/Function 분석
- * - 인덱스, 외래키, 제약조건 분석
- * - 에러 핸들링 및 롤백 기능
- * - 환경별 설정 지원
+ * 📋 핵심 기능:
+ * - 테이블 스키마 분석 및 Entity 생성 정보 수집 (INFORMATION_SCHEMA 활용)
+ * - Stored Procedure/Function 분석 (파라미터, 반환타입, 본문 포함)
+ * - 인덱스, 외래키, 제약조건 분석 (관계 매핑용)
+ * - 에러 핸들링 및 롤백 기능 (안전한 DB 연결 관리)
+ * - 환경별 설정 지원 (dev/qa/prod 구분)
+ *
+ * 🔄 분석 원리:
+ * - MySQL INFORMATION_SCHEMA 테이블을 통한 메타데이터 수집
+ * - 비동기 병렬 처리로 성능 최적화
+ * - 전체 DB 구조를 JSON 형태로 직렬화
+ * - 에러 발생 시 안전한 연결 종료
  */
 
 interface DatabaseConfig {
@@ -118,7 +124,14 @@ class EnhancedSchemaAnalyzer {
   }
 
   /**
-   * 데이터베이스 연결 초기화
+   * 데이터베이스 연결 초기화 - MySQL 연결 설정 및 연결 테스트
+   *
+   * 🔗 연결 설정:
+   * - MySQL 2.x 드라이버 사용
+   * - multipleStatements: true (복수 쿼리 실행 지원)
+   * - 환경별 DB 설정 (host, port, user, password, database)
+   *
+   * ⚠️ 에러 처리: 연결 실패 시 상세 에러 메시지 출력
    */
   async connect(): Promise<void> {
     try {
@@ -151,7 +164,15 @@ class EnhancedSchemaAnalyzer {
   }
 
   /**
-   * 전체 스키마 분석 실행
+   * 전체 스키마 분석 실행 - DB 전체 구조 종합 분석
+   *
+   * 🔄 분석 순서 (병렬 처리):
+   * 1. 테이블 분석: 모든 테이블의 컬럼, 인덱스, 외래키 정보
+   * 2. 저장 프로시저 분석: 파라미터, 본문, 메타데이터
+   * 3. 함수 분석: 반환타입, 파라미터, 본문
+   * 4. DB 메타데이터: 버전, 환경 정보
+   *
+   * 💡 성능 최적화: Promise.all로 병렬 처리
    */
   async analyzeSchema(): Promise<SchemaAnalysisResult> {
     try {
@@ -190,7 +211,15 @@ class EnhancedSchemaAnalyzer {
   }
 
   /**
-   * 테이블 정보 분석
+   * 테이블 정보 분석 - 모든 테이블의 상세 구조 분석
+   *
+   * 📋 분석 대상:
+   * 1. 테이블 기본 정보: 이름, 코멘트, 엔진, 콜레이션
+   * 2. 컬럼 정보: 데이터 타입, NULL 여부, 기본값, 제약조건
+   * 3. 인덱스 정보: Primary Key, Unique, 일반 인덱스
+   * 4. 외래키 정보: 참조 테이블, 업데이트/삭제 규칙
+   *
+   * 🔄 처리 방식: 각 테이블별로 병렬 처리로 성능 최적화
    */
   private async analyzeTables(): Promise<TableInfo[]> {
     const [tableRows] = await this.connection.execute(
@@ -238,7 +267,15 @@ class EnhancedSchemaAnalyzer {
   }
 
   /**
-   * 테이블 컬럼 정보 조회
+   * 테이블 컬럼 정보 조회 - INFORMATION_SCHEMA.COLUMNS를 통한 컬럼 메타데이터 수집
+   *
+   * 📋 수집 정보:
+   * 1. 컬럼 기본 정보: 이름, 데이터 타입, NULL 허용 여부
+   * 2. 제약조건: Primary Key, Auto Increment, 기본값
+   * 3. 데이터 타입 세부: 최대 길이, 정밀도, 스케일
+   * 4. 코멘트 및 ENUM 값: 문서화 및 유효값 정보
+   *
+   * 💡 ENUM 처리: COLUMN_TYPE에서 enum('value1','value2') 형태 파싱
    */
   private async getTableColumns(tableName: string): Promise<ColumnInfo[]> {
     const [rows] = await this.connection.execute(
@@ -291,7 +328,14 @@ class EnhancedSchemaAnalyzer {
   }
 
   /**
-   * 테이블 인덱스 정보 조회
+   * 테이블 인덱스 정보 조회 - INFORMATION_SCHEMA.STATISTICS를 통한 인덱스 메타데이터 수집
+   *
+   * 📋 수집 정보:
+   * 1. 인덱스 기본 정보: 이름, 컬럼명, 인덱스 타입
+   * 2. 인덱스 속성: Unique 여부, Primary Key 여부
+   * 3. 성능 정보: Cardinality (인덱스 선택도)
+   *
+   * 💡 활용: Entity 생성 시 @Index 데코레이터 자동 추가
    */
   private async getTableIndexes(tableName: string): Promise<IndexInfo[]> {
     const [rows] = await this.connection.execute(
@@ -320,7 +364,18 @@ class EnhancedSchemaAnalyzer {
   }
 
   /**
-   * 테이블 외래키 정보 조회
+   * 테이블 외래키 정보 조회 - INFORMATION_SCHEMA 조인으로 외래키 관계 수집
+   *
+   * 🔗 수집 정보:
+   * 1. 외래키 기본 정보: 제약조건명, 컬럼명
+   * 2. 참조 정보: 참조 테이블명, 참조 컬럼명
+   * 3. 참조 무결성 규칙: UPDATE_RULE, DELETE_RULE (CASCADE, RESTRICT 등)
+   *
+   * 🔄 조인 쿼리:
+   * - KEY_COLUMN_USAGE: 외래키 컬럼 정보
+   * - REFERENTIAL_CONSTRAINTS: 참조 무결성 규칙
+   *
+   * 💡 활용: Entity 관계 매핑 (@ManyToOne, @OneToMany) 자동 생성
    */
   private async getTableForeignKeys(
     tableName: string,
@@ -357,7 +412,15 @@ class EnhancedSchemaAnalyzer {
   }
 
   /**
-   * Stored Procedure 분석
+   * Stored Procedure 분석 - INFORMATION_SCHEMA.ROUTINES를 통한 저장 프로시저 메타데이터 수집
+   *
+   * 📋 수집 정보:
+   * 1. 프로시저 기본 정보: 이름, 타입, 생성자, 생성/수정 일시
+   * 2. 실행 환경: SQL_MODE, 문자열 인코딩, 콜레이션
+   * 3. 프로시저 본문: ROUTINE_DEFINITION (전체 SQL 코드)
+   * 4. 파라미터 정보: 별도 메서드로 수집
+   *
+   * 💡 활용: 개별 .sql 파일로 추출하여 버전 관리 및 배포 지원
    */
   private async analyzeProcedures(): Promise<ProcedureInfo[]> {
     const [rows] = await this.connection.execute(
@@ -410,7 +473,16 @@ class EnhancedSchemaAnalyzer {
   }
 
   /**
-   * Function 분석
+   * Function 분석 - INFORMATION_SCHEMA.ROUTINES를 통한 사용자 정의 함수 메타데이터 수집
+   *
+   * 📋 수집 정보:
+   * 1. 함수 기본 정보: 이름, 생성자, 생성/수정 일시
+   * 2. 반환 타입: DTD_IDENTIFIER (함수 반환 데이터 타입)
+   * 3. 실행 환경: SQL_MODE, 문자열 인코딩, 콜레이션
+   * 4. 함수 본문: ROUTINE_DEFINITION (전체 SQL 코드)
+   * 5. 파라미터 정보: 별도 메서드로 수집
+   *
+   * 💡 활용: 개별 .sql 파일로 추출하여 재사용 가능한 비즈니스 로직 관리
    */
   private async analyzeFunctions(): Promise<ProcedureInfo[]> {
     const [rows] = await this.connection.execute(
@@ -464,7 +536,17 @@ class EnhancedSchemaAnalyzer {
   }
 
   /**
-   * Procedure/Function 파라미터 정보 조회
+   * Procedure/Function 파라미터 정보 조회 - INFORMATION_SCHEMA.PARAMETERS를 통한 파라미터 메타데이터 수집
+   *
+   * 📋 수집 정보:
+   * 1. 파라미터 기본 정보: 이름, 모드 (IN/OUT/INOUT)
+   * 2. 데이터 타입: DATA_TYPE, CHARACTER_MAXIMUM_LENGTH
+   * 3. 순서 정보: ORDINAL_POSITION (파라미터 순서)
+   *
+   * 💡 활용:
+   * - SQL 파일 생성 시 정확한 파라미터 선언
+   * - 문서화 시 파라미터 설명 자동 생성
+   * - 타입 안전성 검증
    */
   private async getProcedureParameters(
     routineName: string,
@@ -494,7 +576,17 @@ class EnhancedSchemaAnalyzer {
   }
 
   /**
-   * 데이터베이스 메타 정보 조회
+   * 데이터베이스 메타 정보 조회 - DB 버전 및 기본 정보 수집
+   *
+   * 📋 수집 정보:
+   * 1. MySQL 버전: VERSION() 함수 결과
+   * 2. 데이터베이스 이름: 설정된 DB 이름
+   * 3. 분석 시간: 현재 시간 (ISO 8601 형식)
+   *
+   * 💡 활용:
+   * - 버전 호환성 체크
+   * - 분석 결과 메타데이터
+   * - 환경별 구분 정보
    */
   private async getDatabaseInfo(): Promise<
     Omit<
@@ -515,7 +607,18 @@ class EnhancedSchemaAnalyzer {
   }
 
   /**
-   * 분석 결과를 파일로 저장
+   * 분석 결과를 파일로 저장 - JSON 형태로 직렬화 및 요약 정보 생성
+   *
+   * 💾 저장 파일:
+   * 1. 전체 분석 결과: {environment}-schema.json
+   * 2. 요약 정보: {environment}-schema-summary.json
+   *
+   * 📋 요약 정보 내용:
+   * - 환경, DB 이름, 분석 시간
+   * - 테이블, 프로시저, 함수 개수
+   * - 테이블/프로시저/함수 이름 목록
+   *
+   * 💡 활용: 다른 도구에서 분석 결과 재사용
    */
   async saveAnalysisResult(
     result: SchemaAnalysisResult,

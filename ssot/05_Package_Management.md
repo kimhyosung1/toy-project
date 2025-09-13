@@ -156,7 +156,7 @@
   "start:dev:gateway": "NODE_ENV=dev nest start gateway --watch --debug",
   "start:dev:board": "NODE_ENV=dev nest start board --watch --debug",
   "start:dev:notification": "NODE_ENV=dev nest start notification --watch --debug",
-  "start:dev:debug:test2": "NODE_ENV=dev nest start test2 --watch --debug"
+  "start:dev:scheduler": "NODE_ENV=dev nest start scheduler --watch --debug"
 }
 ```
 
@@ -212,8 +212,7 @@ apps/
 ├── gateway/          # API Gateway (:3000)
 ├── board/           # Board Service (:3001)
 ├── notification/    # Notification Service (:3002)
-├── test2/          # Test Service (:3003)
-└── scheduler/      # Scheduler Service (:3004)
+└── scheduler/       # Scheduler Service (:3004)
 ```
 
 ### 3. 라이브러리 구조
@@ -349,10 +348,10 @@ fetch-retry-factor=2
 pnpm run start:dev:gateway &
 pnpm run start:dev:board &
 pnpm run start:dev:notification &
-pnpm run start:dev:debug:test2 &
+pnpm run start:dev:scheduler &
 ```
 
-## 🔒 보안 고려사항
+## 🔒 보안 패키지 현황
 
 ### 1. 의존성 보안
 
@@ -582,33 +581,23 @@ echo "dist/" >> .gitignore
 echo "coverage/" >> .gitignore
 ```
 
-## 📈 향후 계획
+## 🎯 현재 패키지 상태
 
-### 1. 의존성 업그레이드 로드맵
+### 운영 중인 핵심 패키지
 
-- **NestJS v12**: 2024년 하반기 예정
-- **TypeScript v5.2+**: 성능 개선 및 새 기능
-- **Express v6**: 출시 시 마이그레이션 검토
+- **NestJS v11**: 안정적인 프레임워크 기반
+- **TypeScript v5.1.3**: 타입 안전성 보장
+- **pnpm v8**: 효율적인 패키지 관리
+- **SWC**: 15.6% 빌드 성능 향상
 
-### 2. 새로운 패키지 도입 검토
+### 적용된 보안 패키지
 
-```json
-{
-  "@nestjs/throttler": "^5.0.0", // Rate limiting
-  "@nestjs/cache-manager": "^2.0.0", // 캐싱 개선
-  "@nestjs/event-emitter": "^2.0.0", // 이벤트 기반 아키텍처
-  "helmet": "^7.0.0", // 보안 헤더
-  "compression": "^1.7.4" // 응답 압축
-}
-```
+- **bcrypt**: 비밀번호 암호화
+- **class-validator**: 입력 데이터 검증
+- **TypeORM**: SQL Injection 방지
 
-### 3. 개발 도구 개선
+### 개발 도구 현황
 
-```json
-{
-  "husky": "^8.0.0", // Git hooks
-  "lint-staged": "^13.0.0", // 스테이징된 파일만 린트
-  "@commitlint/cli": "^17.0.0", // 커밋 메시지 검증
-  "semantic-release": "^21.0.0" // 자동 버전 관리
-}
-```
+- **Jest**: 단위/E2E 테스트
+- **ESLint + Prettier**: 코드 품질 관리
+- **Swagger**: API 문서 자동화

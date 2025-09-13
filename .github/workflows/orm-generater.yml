@@ -1,10 +1,7 @@
 name: 🔄 Branch-specific Database Sync
 
 on:
-  workflow_run:
-    workflows: ['🚀 Main Services CI/CD']
-    types:
-      - completed
+  push:
     branches: [dev, qa, production]
 
 env:
@@ -14,15 +11,25 @@ jobs:
   database-sync:
     name: 🚀 Database Sync & Auto Commit
     runs-on: ubuntu-latest
-    if: |
-      contains(fromJson('["dev", "qa", "production"]'), github.ref_name) && 
-      github.event.workflow_run.conclusion == 'success'
 
     permissions:
       contents: write
       pull-requests: write
 
     steps:
+      - name: ⏳ Wait for Main Services CI/CD to complete
+        if: github.event_name == 'push'
+        run: |
+          echo "⏳ Waiting for Main Services CI/CD to complete..."
+          echo "This ensures DB sync runs after Docker builds are done"
+          sleep 300  # 5분 대기 (Main Services CI/CD 완료 대기)
+
+      - name: 🔍 Environment Info
+        run: |
+          echo "🔍 Workflow Info:"
+          echo "Event: ${{ github.event_name }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Manual Environment: ${{ github.event.inputs.environment || 'N/A' }}"
       - name: 🛎️ Checkout Repository
         uses: actions/checkout@v4
         with:
@@ -67,10 +74,14 @@ jobs:
 
       - name: 🚀 Run Database Sync & Auto Commit
         run: |
-          # 환경 매핑
-          ENV_NAME="${{ github.ref_name }}"
-          if [ "$ENV_NAME" = "production" ]; then
-            ENV_NAME="prod"
+          # 환경 매핑 (수동 실행 시 입력값 우선)
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            ENV_NAME="${{ github.event.inputs.environment }}"
+          else
+            ENV_NAME="${{ github.ref_name }}"
+            if [ "$ENV_NAME" = "production" ]; then
+              ENV_NAME="prod"
+            fi
           fi
 
           echo "🚀 Running database sync for $ENV_NAME environment..."

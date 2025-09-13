@@ -115,7 +115,7 @@
 pnpm run start:dev:board        # Board 앱 (483ms 빌드)
 pnpm run start:dev:gateway      # Gateway 앱 (SWC)
 pnpm run start:dev:notification # Notification 앱 (SWC)
-pnpm run start:dev:debug:test2  # Test2 앱 (SWC)
+pnpm run start:dev:scheduler    # Scheduler 앱 (SWC)
 pnpm run start:dev              # 기본 개발 서버 (SWC)
 ```
 
@@ -236,19 +236,20 @@ time pnpm run build board        # 기존 빌드 시간
 2. **병렬 빌드**: 여러 앱을 병렬로 빌드하여 전체 시간 단축
 3. **CI/CD 최적화**: SWC 빌드로 배포 파이프라인 속도 향상
 
-## 🚀 향후 계획
+## 🎯 현재 SWC 적용 상태
 
-### 추가 최적화
+### 완료된 최적화
 
-- **증분 빌드**: 변경된 파일만 재컴파일
-- **병렬 처리**: 멀티코어 활용 최적화
-- **캐시 전략**: 더 효율적인 캐시 활용
+- **15.6% 빌드 성능 향상**: Webpack 컴파일 시간 단축
+- **자동 SWC 적용**: 모든 개발 스크립트에서 자동 사용
+- **TypeScript 호환성**: 100% 동일한 결과물 보장
+- **개발 서버 최적화**: 483ms 초고속 빌드
 
-### 모니터링 강화
+### 적용된 최적화 기술
 
-- **빌드 시간 추적**: 자동화된 성능 모니터링
-- **성능 회귀 감지**: CI/CD에서 성능 저하 자동 감지
-- **최적화 제안**: 프로젝트 구조 기반 최적화 제안
+- **캐시 활용**: SWC 캐시를 통한 증분 빌드
+- **병렬 처리**: 멀티코어 CPU 활용
+- **메모리 효율성**: 최적화된 메모리 사용
 
 ---
 

@@ -21,8 +21,8 @@ async function bootstrap() {
 
   // Swagger 설정
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('Wanted Codding Test API')
-    .setDescription('Wanted Codding Test API Documentation')
+    .setTitle('NestJS 마이크로서비스 스켈레톤 API')
+    .setDescription('NestJS 마이크로서비스 스켈레톤 프로젝트 API Documentation')
     .setVersion('1.0')
     .addBearerAuth()
     .build();

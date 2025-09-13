@@ -1,8 +1,9 @@
-# System Architecture - 익명 게시판 및 키워드 알림 시스템
+# System Architecture - NestJS 마이크로서비스 스켈레톤 프로젝트
 
 ## 🏗️ 시스템 개요
 
-**프로젝트명**: 익명 게시판 및 키워드 알림 시스템  
+**프로젝트명**: NestJS 마이크로서비스 스켈레톤 프로젝트  
+**프로젝트 성격**: 즉시 사용 가능한 완성도 높은 MSA 템플릿  
 **아키텍처**: Microservice Architecture (MSA)  
 **개발 프레임워크**: NestJS v11  
 **런타임**: Node.js v22 (LTS)  
@@ -13,6 +14,8 @@
 **통신 프로토콜**: HTTP (외부), TCP (내부)  
 **패키지 매니저**: pnpm v8  
 **컨테이너화**: Docker + Docker Compose
+
+> **핵심 가치**: 기능만 추가하면 바로 프로덕션에 사용할 수 있는 완성도 높은 NestJS 마이크로서비스 스켈레톤
 
 ## 🎯 설계 원칙
 
@@ -55,7 +58,6 @@ graph TB
     subgraph "Business Logic Layer"
         Board[Board Service :3001]
         Notification[Notification Service :3002]
-        Test2[Test2 Service :3003]
         Scheduler[Scheduler Service :3004]
     end
 
@@ -71,19 +73,16 @@ graph TB
     Client --> Gateway
     Gateway --> Board
     Gateway --> Notification
-    Gateway --> Test2
     Gateway --> Scheduler
 
     Board --> MySQL
     Board --> Redis
     Notification --> MySQL
     Notification --> Redis
-    Test2 --> MySQL
 
     Gateway -.-> Docker
     Board -.-> Docker
     Notification -.-> Docker
-    Test2 -.-> Docker
     Scheduler -.-> Docker
 ```
 
@@ -103,16 +102,13 @@ services:
   notification: # 컨테이너명: notification
     ports: ['3002:3002']
 
-  test2: # 컨테이너명: test2
-    ports: ['3003:3003']
-
   scheduler: # 컨테이너명: scheduler
     ports: ['3004:3004']
 ```
 
 **주요 특징:**
 
-- ✅ **간소화된 컨테이너명**: `gateway`, `board`, `notification`, `test2`, `scheduler`
+- ✅ **간소화된 컨테이너명**: `gateway`, `board`, `notification`, `scheduler`
 - ✅ **프로젝트명**: `toy-project`
 - ✅ **포트 매핑**: 호스트와 컨테이너 동일 포트 사용
 - ✅ **공통 환경변수**: `x-common-env` 앵커 패턴 활용
@@ -125,13 +121,12 @@ services:
 | **Gateway**      | 3000 | `gateway`      | HTTP      | API Gateway, Swagger    |
 | **Board**        | 3001 | `board`        | TCP       | 게시판 CRUD, 댓글 관리  |
 | **Notification** | 3002 | `notification` | TCP       | 키워드 알림, Queue 처리 |
-| **Test2**        | 3003 | `test2`        | TCP       | 테스트 서비스           |
 | **Scheduler**    | 3004 | `scheduler`    | TCP       | 스케줄링, Cron 작업     |
 
 **통신 플로우:**
 
 ```
-Client (HTTP) → Gateway (HTTP:3000) → Microservices (TCP:3001-3004)
+Client (HTTP) → Gateway (HTTP:3000) → Microservices (TCP:3001,3002,3004)
 ```
 
 ## 🏗️ 마이크로서비스 상세 구조
@@ -226,27 +221,7 @@ apps/notification/src/
 - 중복 알림 방지
 - 실시간 키워드 감지
 
-### 4. Test2 Service (:3003)
-
-**역할**: 테스트 및 개발용 서비스
-
-**기술 구성**:
-
-- **TCP 마이크로서비스**: NestJS 마이크로서비스
-- **테스트 기능**: 개발 및 검증용 API
-- **데이터베이스**: TypeORM + MySQL
-
-**구성요소**:
-
-```typescript
-apps/test2/src/
-├── main.ts                    # 마이크로서비스 진입점
-├── test2.module.ts            # 테스트 모듈
-├── test2.controller.ts        # TCP 컨트롤러
-└── test2.service.ts           # 테스트 로직
-```
-
-### 5. Scheduler Service (:3004)
+### 4. Scheduler Service (:3004)
 
 **역할**: 스케줄링 및 백그라운드 작업 처리
 
@@ -456,10 +431,10 @@ graph TD
 
 ```yaml
 # docker-compose.yml
-name: toy-project # 프로젝트명 간소화
+name: toy-project
 
 services:
-  gateway: # toy-project- 접두사 제거
+  gateway:
     container_name: gateway
     ports: ['3000:3000']
 
@@ -471,9 +446,9 @@ services:
     container_name: notification
     ports: ['3002:3002']
 
-  test2:
-    container_name: test2
-    ports: ['3003:3003']
+  scheduler:
+    container_name: scheduler
+    ports: ['3004:3004']
 ```
 
 **최적화 포인트**:
@@ -592,7 +567,7 @@ REDIS_PORT=6379
 - **Redis Queue**: 알림 처리 비동기화
 - **Background Jobs**: 시스템 응답성 향상
 
-## 🔒 보안 고려사항
+## 🔒 보안 구현 현황
 
 ### 입력 데이터 검증
 
@@ -618,7 +593,6 @@ REDIS_PORT=6379
 - Gateway: `GET /health-check`
 - Board: `GET /board/health-check`
 - Notification: `GET /notification/health-check`
-- Test2: `GET /test2/health-check`
 
 ### Docker 로깅
 
@@ -634,39 +608,74 @@ docker-compose logs -f board  # 실시간
 
 ### 로깅 시스템
 
-```typescript
-// 성공 로그
-console.log(`✅ Response validated [${controllerName}.${methodName}]`);
+- **성공 로그**: 응답 검증 성공 시 자동 로깅
+- **에러 로그**: 검증 실패 시 상세 에러 정보 출력
+- **안전한 JSON 직렬화**: UtilityService 활용
 
-// 에러 로그
-console.error(
-  `❌ Validation failed [${controllerName}.${methodName}]:`,
-  this.utilityService.toJsonString(errors, 2),
-);
+## 🎯 현재 운영 상태
+
+### 완료된 시스템 구성
+
+- **✅ 4개 마이크로서비스**: Gateway, Board, Notification, Scheduler 운영 중
+- **✅ 자동화된 응답 시스템**: 완전 자동화된 타입 검증/변환
+- **✅ Docker 컨테이너화**: 일관된 개발/운영 환경
+- **✅ 고성능 빌드**: SWC 컴파일러로 15.6% 성능 향상
+- **✅ 효율적 패키지 관리**: pnpm v8 적용
+
+### 운영 중인 핵심 기능
+
+- **게시판 시스템**: CRUD + 댓글 관리
+- **알림 처리**: Redis Queue 기반 비동기 처리
+- **스케줄링**: Cron 기반 배치 작업
+- **보안**: bcrypt 암호화 + 자동 검증
+
+## 🔧 새로운 서비스 추가 아키텍처 패턴
+
+### 서비스 구조 템플릿
+
+```typescript
+// 새 서비스 구조 예시
+apps/{servicename}/src/
+├── main.ts                    # 마이크로서비스 진입점
+├── {servicename}.module.ts    # 서비스 메인 모듈
+├── {servicename}.controller.ts # TCP 컨트롤러
+├── {servicename}.service.ts   # 비즈니스 로직
+└── dto/                       # 요청/응답 DTO
+    ├── create-{resource}.dto.ts
+    └── update-{resource}.dto.ts
 ```
 
-## 🔮 향후 계획
+### 아키텍처 다이어그램 업데이트 패턴
 
-### 기능 확장
+새 서비스 추가 시 Mermaid 다이어그램에 추가:
 
-- **인증/인가 시스템**: JWT 기반 사용자 인증
-- **파일 업로드**: 이미지 첨부 기능
-- **실시간 알림**: WebSocket 기반 실시간 알림
-- **API 버전 관리**: v1, v2 API 지원
+```mermaid
+subgraph "Business Logic Layer"
+    Board[Board Service :3001]
+    Notification[Notification Service :3002]
+    Scheduler[Scheduler Service :3004]
+    NewService[New Service :3005]  # 새 서비스 추가
+end
 
-### 인프라 개선
+Gateway --> NewService  # 연결 추가
+```
 
-- **Kubernetes**: 컨테이너 오케스트레이션
-- **CI/CD 파이프라인**: GitHub Actions
-- **모니터링**: Prometheus + Grafana
-- **로그 집계**: ELK Stack
+### 서비스 간 통신 패턴
 
-### 성능 개선
+**표준 통신 방식**:
 
-- **캐싱 전략**: Redis 기반 데이터 캐싱
-- **CDN 도입**: 정적 자원 최적화
-- **로드 밸런싱**: 트래픽 분산 처리
-- **DB 샤딩**: 대용량 데이터 처리
+- **Gateway → Service**: TCP 메시지 패턴
+- **Service → Service**: 이벤트 기반 (Redis Queue)
+- **Service → Database**: TypeORM Repository 패턴
+
+### 공통 라이브러리 활용
+
+**모든 새 서비스는 다음 공통 라이브러리 사용**:
+
+- `libs/common` - 공통 데코레이터 및 인터셉터
+- `libs/core` - 설정 및 예외 처리
+- `libs/database` - Entity 및 Repository
+- `libs/global-dto` - 공통 DTO
 
 ---
 

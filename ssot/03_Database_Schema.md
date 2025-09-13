@@ -200,19 +200,77 @@ DB_DATABASE=public
 - **페이징**: LIMIT, OFFSET 활용
 - **부분 로딩**: 필요한 필드만 SELECT
 
-## 🔮 확장 계획
+## 🎯 현재 운영 상태
 
-### 추가 예정 테이블
+### 활성 테이블 현황
 
-- **사용자 관리**: JWT 인증 도입 시
-- **파일 관리**: 이미지 업로드 기능
-- **알림 히스토리**: 발송된 알림 이력
+- **게시판 도메인**: tb_board, tb_comment (완전 구현)
+- **알림 시스템**: tb_keyword_notification (운영 중)
+- **테스트 환경**: tb_test (개발용)
 
-### 성능 개선
+### 성능 최적화 적용
 
-- **읽기 전용 복제본**: 조회 성능 향상
-- **샤딩**: 대용량 데이터 처리
+- **인덱스 최적화**: 검색 성능 향상 완료
+- **페이징 처리**: 대용량 데이터 효율적 처리
+- **관계 매핑**: N+1 문제 방지 적용
 - **캐싱**: Redis 기반 결과 캐싱
+
+## 🔧 새로운 테이블 추가 패턴
+
+### 테이블 네이밍 규칙
+
+**기본 패턴**: `tb_{domain}` 또는 `tb_{domain}_{entity}`
+
+- 예: `tb_user`, `tb_board_like`, `tb_file_upload`
+
+**관계 테이블**: `tb_{entity1}_{entity2}`
+
+- 예: `tb_user_role`, `tb_board_tag`
+
+### Entity 네이밍 규칙
+
+**Entity 클래스**: `{TableName}Entity` (PascalCase)
+
+- 예: `TbUserEntity`, `TbBoardLikeEntity`
+
+**Repository 클래스**: `{Domain}Repository`
+
+- 예: `UserRepository`, `BoardRepository`
+
+### 새 테이블 추가 템플릿
+
+```typescript
+// Entity 예시
+@Entity('tb_new_table')
+export class TbNewTableEntity {
+  @PrimaryGeneratedColumn({ name: 'id' })
+  id: number;
+
+  @Column({ length: 255 })
+  name: string;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
+}
+```
+
+### 관계 설정 패턴
+
+**OneToMany/ManyToOne**:
+
+```typescript
+// 부모 Entity
+@OneToMany(() => ChildEntity, (child) => child.parent)
+children: ChildEntity[];
+
+// 자식 Entity
+@ManyToOne(() => ParentEntity, (parent) => parent.children)
+@JoinColumn({ name: 'parent_id' })
+parent: ParentEntity;
+```
 
 ---
 

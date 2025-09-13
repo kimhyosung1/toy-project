@@ -20,15 +20,22 @@ import {
 } from './procedure-extractor';
 
 /**
- * 🚀 Enhanced Database Synchronization
+ * 🚀 Enhanced Database Synchronization - DB 동기화 통합 관리자
  *
- * 통합 실행 스크립트:
- * 1. DB 스키마 분석
- * 2. Entity 자동 생성
- * 3. Repository 자동 생성
- * 4. Procedure/Function SQL 파일 추출
- * 5. index.ts 파일 자동 업데이트
- * 6. 에러 핸들링 및 롤백
+ * 📋 핵심 기능:
+ * 1. DB 스키마 분석 - MySQL 테이블 구조 실시간 분석
+ * 2. Entity 자동 생성 - TypeORM Entity 클래스 자동 생성 및 병합
+ * 3. Repository 자동 생성 - 기본 CRUD 메서드 포함 Repository 생성
+ * 4. Procedure/Function SQL 파일 추출 - 저장 프로시저/함수 개별 파일 추출
+ * 5. index.ts 파일 자동 업데이트 - 모든 생성 파일 자동 export
+ * 6. 에러 핸들링 및 롤백 - 안전한 백업/복원 시스템
+ *
+ * 🔄 동작 원리:
+ * - MySQL INFORMATION_SCHEMA를 통한 메타데이터 수집
+ * - snake_case → camelCase 자동 변환
+ * - 기존 수동 코드 보존하는 스마트 병합
+ * - 삭제된 테이블 자동 감지 및 @deprecated 처리
+ * - 환경별(dev/qa/prod) 설정 지원
  */
 
 interface DatabaseConfig {
@@ -76,7 +83,15 @@ class EnhancedDbSync {
   }
 
   /**
-   * 전체 동기화 실행
+   * 전체 동기화 실행 - DB 스키마와 코드 동기화 메인 프로세스
+   *
+   * 🔄 실행 순서:
+   * 1. 스키마 분석: MySQL DB 구조 분석
+   * 2. 삭제된 테이블 감지: 기존 Entity와 비교하여 삭제된 테이블 찾기
+   * 3. Entity 생성: TypeORM Entity 클래스 생성/병합
+   * 4. Repository 생성: 기본 CRUD Repository 생성
+   * 5. Procedure 추출: 저장 프로시저/함수 SQL 파일 추출
+   * 6. 코드 검증: TypeScript 컴파일 체크
    */
   async execute(): Promise<SyncResult> {
     const result: SyncResult = {
@@ -232,7 +247,15 @@ class EnhancedDbSync {
   }
 
   /**
-   * 스키마 분석
+   * 스키마 분석 - MySQL DB 구조 실시간 분석
+   *
+   * 📊 분석 대상:
+   * - 테이블 구조 (컬럼, 타입, 제약조건)
+   * - 인덱스 정보 (Primary Key, Unique, Index)
+   * - 외래키 관계 (참조 테이블, 삭제/업데이트 규칙)
+   * - 저장 프로시저/함수 (파라미터, 반환 타입)
+   *
+   * 💡 핵심: INFORMATION_SCHEMA 테이블을 통한 메타데이터 수집
    */
   private async analyzeSchema(): Promise<SchemaAnalysisResult> {
     const analyzer = new EnhancedSchemaAnalyzer(
@@ -258,7 +281,18 @@ class EnhancedDbSync {
   }
 
   /**
-   * 삭제된 테이블 감지 및 Deprecate 처리
+   * 삭제된 테이블 감지 및 Deprecate 처리 - 안전한 하위 호환성 보장
+   *
+   * 🔍 감지 로직:
+   * 1. 현재 DB 테이블 목록 수집
+   * 2. 기존 Entity 파일들과 비교
+   * 3. DB에서 삭제된 테이블 식별
+   *
+   * 🏷️ Deprecate 처리:
+   * - Entity 파일에 @deprecated 주석 추가
+   * - Repository 파일에 @deprecated 주석 추가
+   * - index.ts에서 ALL_ENTITIES/ALL_REPOSITORIES 배열에서 제외
+   * - 기존 코드 호환성 유지 (파일은 삭제하지 않음)
    */
   private async handleDeletedTables(
     schemaResult: SchemaAnalysisResult,
@@ -443,7 +477,16 @@ class EnhancedDbSync {
   }
 
   /**
-   * Entity 생성
+   * Entity 생성 - TypeORM Entity 클래스 자동 생성 및 스마트 병합
+   *
+   * 🏗️ 생성 과정:
+   * 1. 테이블 스키마 → TypeORM Entity 변환
+   * 2. snake_case → camelCase 프로퍼티 변환
+   * 3. 기존 Entity 파일과 병합 (수동 관계 보존)
+   * 4. 관계 매핑 자동 생성 (OneToMany, ManyToOne)
+   * 5. 인덱스 및 제약조건 적용
+   *
+   * 💡 스마트 병합: 기존 수동 코드(관계, import) 보존
    */
   private async generateEntities(
     schemaResult: SchemaAnalysisResult,
@@ -470,7 +513,15 @@ class EnhancedDbSync {
   }
 
   /**
-   * Repository 생성
+   * Repository 생성 - 기본 CRUD 메서드 포함 Repository 자동 생성
+   *
+   * 🔧 생성 규칙:
+   * 1. 같은 테이블 처리하는 기존 Repository 있으면 건너뛰기
+   * 2. 새 테이블에 대해서만 Repository 생성
+   * 3. 기본 CRUD 메서드 템플릿 포함
+   * 4. 타입 안전성 보장 (Generic Repository<Entity>)
+   *
+   * 📝 생성 파일: {table-name}.repository.ts
    */
   private async generateRepositories(
     schemaResult: SchemaAnalysisResult,
@@ -497,7 +548,15 @@ class EnhancedDbSync {
   }
 
   /**
-   * Repository index.ts 업데이트 (deprecated Repository 제외)
+   * Repository index.ts 업데이트 - 자동 export 관리 (deprecated 제외)
+   *
+   * 📦 업데이트 내용:
+   * 1. 모든 Repository 파일 스캔
+   * 2. @deprecated 주석 있는 Repository 식별
+   * 3. export 문은 모두 포함 (하위 호환성)
+   * 4. ALL_REPOSITORIES 배열에는 deprecated 제외
+   *
+   * 💡 목적: 자동화된 모듈 관리 및 안전한 deprecated 처리
    */
   private async updateRepositoryIndex(
     schemaResult: SchemaAnalysisResult,
@@ -596,7 +655,16 @@ ${sortedRepositoryNames.map((name) => `  ${name},`).join('\n')}
   }
 
   /**
-   * Procedure/Function 추출
+   * Procedure/Function 추출 - 저장 프로시저/함수 개별 SQL 파일 추출
+   *
+   * 🏪 추출 과정:
+   * 1. DB에서 저장 프로시저/함수 메타데이터 수집
+   * 2. 각각을 개별 .sql 파일로 추출
+   * 3. 파라미터 정보 및 주석 포함
+   * 4. procedures/ 및 functions/ 디렉토리 분리
+   *
+   * 📁 파일 구조: {procedure_name}.sql, {function_name}.sql
+   * 💡 활용: 개별 import 가능, 버전 관리 용이
    */
   private async extractProcedures(
     schemaResult: SchemaAnalysisResult,
@@ -638,7 +706,15 @@ ${sortedRepositoryNames.map((name) => `  ${name},`).join('\n')}
   }
 
   /**
-   * 생성된 코드 검증
+   * 생성된 코드 검증 - TypeScript 컴파일 체크로 코드 품질 보장
+   *
+   * 🧪 검증 항목:
+   * 1. TypeScript 컴파일 에러 체크
+   * 2. Entity 관계 매핑 유효성
+   * 3. Import 문 정확성
+   * 4. 타입 안전성 확인
+   *
+   * ⚠️ 실패 시: 경고 출력하지만 프로세스 중단하지 않음
    */
   private async validateGeneratedCode(): Promise<void> {
     try {

@@ -9,14 +9,20 @@ import {
 } from './enhanced-schema-analyzer';
 
 /**
- * 🏗️ Enhanced Entity Generator
+ * 🏗️ Enhanced Entity Generator - TypeORM Entity 자동 생성 및 스마트 병합 시스템
  *
- * 기능:
- * - TypeORM Entity 클래스 자동 생성
- * - 관계 매핑 자동 설정
- * - 인덱스 및 제약조건 적용
- * - 타입 안전성 보장
- * - 백업 및 롤백 기능
+ * 📋 핵심 기능:
+ * - TypeORM Entity 클래스 자동 생성 (MySQL 스키마 → TypeScript)
+ * - 관계 매핑 자동 설정 (OneToMany, ManyToOne, 외래키 기반)
+ * - 인덱스 및 제약조건 적용 (@Index, @Unique)
+ * - 타입 안전성 보장 (TypeScript 엄격 타입 사용)
+ * - 백업 및 롤백 기능 (안전한 코드 생성)
+ *
+ * 🔄 스마트 병합 원리:
+ * - 기존 Entity 파일의 수동 관계 보존
+ * - snake_case(DB) → camelCase(TypeScript) 자동 변환
+ * - 기존 import 문 및 TypeORM 데코레이터 보존
+ * - 중복 제거 및 충돌 방지
  */
 
 interface EntityGenerationOptions {
@@ -51,7 +57,15 @@ class EnhancedEntityGenerator {
   }
 
   /**
-   * Entity 생성 실행
+   * Entity 생성 실행 - 전체 Entity 파일 생성 및 병합 프로세스
+   *
+   * 🔄 실행 순서:
+   * 1. 백업 생성: 기존 Entity 파일들 백업
+   * 2. 출력 디렉토리 준비: entities/ 디렉토리 설정
+   * 3. Entity 파일 생성: 각 테이블별 Entity 파일 생성/병합
+   * 4. index.ts 업데이트: 모든 Entity export 및 ALL_ENTITIES 배열
+   *
+   * ⚠️ 에러 시 롤백: 백업에서 자동 복원
    */
   async generateEntities(): Promise<void> {
     try {
@@ -163,7 +177,15 @@ class EnhancedEntityGenerator {
   }
 
   /**
-   * 개별 Entity 파일 생성 (기존 파일과 병합)
+   * 개별 Entity 파일 생성 - 기존 파일과 스마트 병합
+   *
+   * 🔄 병합 로직:
+   * 1. 기존 파일 존재 여부 확인
+   * 2. overwrite 옵션에 따른 처리 방식 결정
+   * 3. 기존 파일 있으면 수동 코드 보존하며 병합
+   * 4. 새 파일이면 완전히 새로 생성
+   *
+   * 💡 병합 대상: 수동 관계, import 문, TypeORM 데코레이터
    */
   private async generateEntityFile(table: TableInfo): Promise<void> {
     const entityName = this.toPascalCase(table.tableName);
@@ -203,7 +225,15 @@ class EnhancedEntityGenerator {
   }
 
   /**
-   * 기존 Entity와 새 스키마 정보 병합
+   * 기존 Entity와 새 스키마 정보 병합 - 수동 코드 보존 로직
+   *
+   * 🔍 병합 과정:
+   * 1. 수동 관계 추출: @OneToMany, @ManyToMany 등 수동 추가된 관계
+   * 2. 수동 import 추출: Entity import 및 TypeORM import
+   * 3. 새 Entity 내용 생성: DB 스키마 기반 새 Entity 생성
+   * 4. 수동 콘텐츠 병합: 중복 제거하며 수동 코드 병합
+   *
+   * 💡 핵심: DB 스키마 변경에도 수동 코드 유지
    */
   private async mergeEntityContent(
     table: TableInfo,
@@ -228,7 +258,14 @@ class EnhancedEntityGenerator {
   }
 
   /**
-   * 수동으로 추가된 관계 프로퍼티 추출
+   * 수동으로 추가된 관계 프로퍼티 추출 - DB 스키마에 없는 비즈니스 관계 보존
+   *
+   * 🔍 추출 대상:
+   * 1. @OneToMany 관계: DB 외래키에 없는 역방향 관계
+   * 2. @ManyToMany 관계: 중간 테이블 없는 다대다 관계
+   * 3. 비즈니스 로직 관계: 개발자가 수동 추가한 관계
+   *
+   * 💡 판별 기준: DB 컬럼에 없는 프로퍼티는 수동 관계로 간주
    */
   private extractManualRelations(content: string, table: TableInfo): string[] {
     const relations: string[] = [];
@@ -419,7 +456,16 @@ class EnhancedEntityGenerator {
   }
 
   /**
-   * Entity 클래스 내용 생성
+   * Entity 클래스 내용 생성 - 완전한 TypeORM Entity 클래스 코드 생성
+   *
+   * 🏗️ 생성 구성요소:
+   * 1. Import 문: TypeORM 데코레이터 및 관련 Entity import
+   * 2. 클래스 데코레이터: @Entity, @Index 등
+   * 3. 클래스 선언: {TableName}Entity 클래스
+   * 4. 프로퍼티들: DB 컬럼 → TypeScript 프로퍼티
+   * 5. 관계 매핑: 외래키 기반 관계 생성
+   *
+   * 💡 자동 변환: snake_case → camelCase, MySQL 타입 → TypeScript 타입
    */
   private generateEntityContent(table: TableInfo): string {
     const entityName = this.toPascalCase(table.tableName) + 'Entity';
@@ -438,7 +484,16 @@ ${properties}${relations}
   }
 
   /**
-   * Import 문 생성
+   * Import 문 생성 - TypeORM 데코레이터 및 관련 Entity import 자동 생성
+   *
+   * 📦 Import 종류:
+   * 1. TypeORM 데코레이터: Entity, Column, PrimaryGeneratedColumn 등
+   * 2. 날짜 데코레이터: CreateDateColumn, UpdateDateColumn
+   * 3. 관계 데코레이터: OneToMany, ManyToOne, JoinColumn
+   * 4. 인덱스 데코레이터: Index (인덱스 있을 때)
+   * 5. 관련 Entity: 외래키 관계에 따른 다른 Entity import
+   *
+   * 💡 자동 최적화: 필요한 데코레이터만 선택적 import
    */
   private generateImports(table: TableInfo): string {
     const imports = new Set<string>(['Entity', 'Column']);
@@ -545,7 +600,13 @@ ${properties}${relations}
   }
 
   /**
-   * 클래스 데코레이터 생성
+   * 클래스 데코레이터 생성 - @Entity 및 @Index 데코레이터 생성
+   *
+   * 🏷️ 데코레이터 종류:
+   * 1. @Entity: 테이블 이름 매핑 (@Entity('table_name'))
+   * 2. @Index: Unique 인덱스 매핑 (Primary Key 제외)
+   *
+   * 💡 인덱스 처리: 고유 인덱스만 데코레이터로 추가
    */
   private generateClassDecorator(table: TableInfo): string {
     let decorator = `@Entity('${table.tableName}')`;
@@ -567,7 +628,15 @@ ${properties}${relations}
   }
 
   /**
-   * 프로퍼티 생성 (외래키 컬럼도 포함)
+   * 프로퍼티 생성 - 모든 DB 컬럼을 TypeScript 프로퍼티로 변환
+   *
+   * 📋 변환 대상:
+   * 1. 일반 컬럼: 데이터 타입에 따른 TypeScript 타입 매핑
+   * 2. Primary Key 컬럼: @PrimaryGeneratedColumn 또는 @PrimaryColumn
+   * 3. 외래키 컬럼: 일반 컬럼으로 처리 (관계는 별도 생성)
+   * 4. 날짜 컬럼: @CreateDateColumn, @UpdateDateColumn 자동 감지
+   *
+   * 💡 snake_case → camelCase 자동 변환 및 name 매핑
    */
   private generateProperties(table: TableInfo): string {
     // 모든 컬럼을 포함 (외래키 컬럼도 Entity 필드로 필요함)
@@ -834,7 +903,17 @@ ${properties}${relations}
   }
 
   /**
-   * 관계 생성 (외래키 기반)
+   * 관계 생성 - 외래키 기반 TypeORM 관계 매핑 자동 생성
+   *
+   * 🔗 생성 관계 종류:
+   * 1. @ManyToOne: 외래키 컬럼 기반 (이 테이블 → 참조 테이블)
+   * 2. @OneToMany: 역방향 관계 (참조 테이블 → 이 테이블)
+   * 3. 자기 참조: parent-children 관계 (계층형 구조)
+   *
+   * 💡 자동 설정:
+   * - @JoinColumn: 외래키 컬럼 명 매핑
+   * - onDelete: 'CASCADE' 기본 설정
+   * - 의미있는 프로퍼티 이름 생성 (tb_ 접두사 제거)
    */
   private generateRelations(table: TableInfo): string {
     if (!this.options.generateRelations) {
@@ -900,7 +979,15 @@ ${properties}${relations}
   }
 
   /**
-   * index.ts 파일 업데이트
+   * index.ts 파일 업데이트 - 모든 Entity 자동 export 및 ALL_ENTITIES 배열 생성
+   *
+   * 📦 생성 내용:
+   * 1. 개별 Entity export: export * from './table-name.entity'
+   * 2. Entity import: ALL_ENTITIES 배열용 import 문
+   * 3. ALL_ENTITIES 배열: TypeORM 설정에서 사용할 모든 Entity 배열
+   * 4. 메타데이터: 환경, 테이블 수 등 정보
+   *
+   * 💡 자동화 목적: 새 Entity 추가 시 수동 import 불필요
    */
   private async updateIndexFile(): Promise<void> {
     const indexPath = path.join(this.options.outputDir, 'index.ts');
