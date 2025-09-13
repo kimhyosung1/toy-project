@@ -3,11 +3,11 @@
 > 🤖 Auto-generated documentation  
 > Environment: dev  
 > Database: public  
-> Generated: 2025-09-12T23:52:10.983Z
+> Generated: 2025-09-13T00:25:17.881Z
 
 ## Overview
 
-Total Procedures: **3**
+Total Procedures: **4**
 
 ## Procedures List
 
@@ -65,6 +65,25 @@ CALL `sp_hello_world2`();
 
 **Created:** 2025-09-12T23:18:33.000Z  
 **Modified:** 2025-09-12T23:18:33.000Z
+
+---
+
+### 4. sp_hello_world3
+
+**Description:** No description available
+
+**Parameters:**
+No parameters
+
+**Usage:**
+```sql
+CALL `sp_hello_world3`();
+```
+
+**File:** `sp_hello_world3.sql`
+
+**Created:** 2025-09-13T00:01:48.000Z  
+**Modified:** 2025-09-13T00:01:48.000Z
 
 ---
 

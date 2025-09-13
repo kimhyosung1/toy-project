@@ -3,14 +3,14 @@
 > 🤖 Auto-generated documentation  
 > Environment: dev  
 > Database: public  
-> Generated: 2025-09-12T23:52:10.984Z
+> Generated: 2025-09-13T00:25:17.881Z
 
 ## 📊 Overview
 
 | Type | Count | Files |
 |------|-------|-------|
-| Stored Procedures | 3 | [procedures.md](./procedures.md) |
-| Functions | 2 | [functions.md](./functions.md) |
+| Stored Procedures | 4 | [procedures.md](./procedures.md) |
+| Functions | 3 | [functions.md](./functions.md) |
 
 ## 📁 File Structure
 
@@ -45,10 +45,12 @@ SELECT function_name(param1, param2) AS result;
 1. [`generate_keywords`](../procedures/generate_keywords.sql) - No description
 2. [`sp_hello_world1`](../procedures/sp_hello_world1.sql) - No description
 3. [`sp_hello_world2`](../procedures/sp_hello_world2.sql) - No description
+4. [`sp_hello_world3`](../procedures/sp_hello_world3.sql) - No description
 
 ### Functions
 1. [`fn_hello_world1`](../functions/fn_hello_world1.sql) - No description
 2. [`fn_hello_world2`](../functions/fn_hello_world2.sql) - No description
+3. [`fn_hello_world3`](../functions/fn_hello_world3.sql) - No description
 
 ## 🔄 Auto-Generation
 
@@ -59,4 +61,4 @@ To regenerate:
 npm run db:sync
 ```
 
-Last updated: 2025-09-12T23:52:10.984Z
+Last updated: 2025-09-13T00:25:17.881Z

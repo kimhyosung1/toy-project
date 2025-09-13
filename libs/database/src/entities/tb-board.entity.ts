@@ -11,7 +11,7 @@ import { TbCommentEntity } from './tb-comment.entity';
 
 @Entity('tb_board')
 export class TbBoardEntity {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ name: 'board_id' })
   boardId: number;
 
   @Column({ type: 'varchar', length: 255 })
@@ -27,10 +27,10 @@ export class TbBoardEntity {
   @Column({ type: 'varchar', length: 255 })
   password: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
   @OneToMany(() => TbCommentEntity, (comment) => comment.board)

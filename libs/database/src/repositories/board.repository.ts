@@ -9,7 +9,6 @@ import {
   Repository,
 } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { TbCommentEntity } from '../entities';
 
 @Injectable()
 export class BoardRepository {

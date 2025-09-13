@@ -9,17 +9,17 @@ import {
 
 @Entity('tb_notification')
 export class TbNotificationEntity {
-  @Column({ default: '0' })
-  isRead: number;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @Column()
-  sourceId: number;
-
   @PrimaryGeneratedColumn()
   id: number;
+
+  @Column({ name: 'is_read', default: 0 })
+  isRead: number;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @Column({ name: 'source_id' })
+  sourceId: number;
 
   @Column({ length: 255 })
   title: string;
@@ -27,19 +27,19 @@ export class TbNotificationEntity {
   @Column({ type: 'text', nullable: true })
   content?: string;
 
-  @Column({ length: 100 })
+  @Column({ name: 'user_id', length: 100 })
   userId: string;
 
   @Column({ type: 'text' })
   keywords: string;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
   @Column({
-    type: 'enum',
-    enum: ['BOARD', 'COMMENT', 'SYSTEM'],
+    name: 'source_type',
     default: 'SYSTEM',
+    enum: ['BOARD', 'COMMENT', 'SYSTEM'],
   })
   sourceType: 'BOARD' | 'COMMENT' | 'SYSTEM';
 }

@@ -12,14 +12,14 @@ import { TbBoardEntity } from './tb-board.entity';
 
 @Entity('tb_comment')
 export class TbCommentEntity {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ name: 'comment_id' })
   commentId: number;
 
-  @Column()
+  @Column({ name: 'board_id' })
   @Index('idx_board_id')
   boardId: number;
 
-  @Column({ nullable: true })
+  @Column({ name: 'parent_id', nullable: true })
   @Index('idx_parent_id')
   parentId: number | null;
 
@@ -29,7 +29,7 @@ export class TbCommentEntity {
   @Column({ type: 'varchar', length: 50 })
   author: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
   @ManyToOne(() => TbBoardEntity, (board) => board.comments, {
