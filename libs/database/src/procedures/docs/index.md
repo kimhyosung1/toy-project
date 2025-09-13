@@ -3,7 +3,7 @@
 > 🤖 Auto-generated documentation  
 > Environment: dev  
 > Database: public  
-> Generated: 2025-09-13T09:08:24.102Z
+> Generated: 2025-09-13T09:26:37.110Z
 
 ## 📊 Overview
 
@@ -63,4 +63,4 @@ To regenerate:
 npm run db:sync
 ```
 
-Last updated: 2025-09-13T09:08:24.102Z
+Last updated: 2025-09-13T09:26:37.110Z

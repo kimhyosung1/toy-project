@@ -3,7 +3,7 @@
 > 🤖 Auto-generated documentation  
 > Environment: dev  
 > Database: public  
-> Generated: 2025-09-13T09:08:24.101Z
+> Generated: 2025-09-13T09:26:37.109Z
 
 ## Overview
 

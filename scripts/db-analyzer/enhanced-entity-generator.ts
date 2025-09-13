@@ -212,6 +212,8 @@ class EnhancedEntityGenerator {
     // 기존 파일에서 수동으로 추가된 관계 프로퍼티 추출
     const manualRelations = this.extractManualRelations(existingContent, table);
     const manualImports = this.extractManualImports(existingContent);
+    const manualTypeOrmImports =
+      this.extractManualTypeOrmImports(existingContent);
 
     // 새 Entity 내용 생성
     const newEntityContent = this.generateEntityContent(table);
@@ -221,6 +223,7 @@ class EnhancedEntityGenerator {
       newEntityContent,
       manualRelations,
       manualImports,
+      manualTypeOrmImports,
     );
   }
 
@@ -280,21 +283,52 @@ class EnhancedEntityGenerator {
   }
 
   /**
-   * 수동으로 추가된 Import 추출
+   * 수동으로 추가된 Import 추출 (TypeORM import와 Entity import 모두)
    */
   private extractManualImports(content: string): string[] {
     const imports: string[] = [];
 
     // Entity import 찾기 (자동 생성되지 않은 것들)
-    const importRegex =
+    const entityImportRegex =
       /import\s*\{\s*([^}]+)\s*\}\s*from\s*['"][^'"]*\.entity['"]\s*;/g;
     let match;
 
-    while ((match = importRegex.exec(content)) !== null) {
+    while ((match = entityImportRegex.exec(content)) !== null) {
       imports.push(match[0].trim());
     }
 
     return imports;
+  }
+
+  /**
+   * 수동으로 추가된 TypeORM 데코레이터 감지 및 Import 업데이트
+   */
+  private extractManualTypeOrmImports(content: string): Set<string> {
+    const manualImports = new Set<string>();
+
+    // 수동으로 추가된 관계에서 사용된 TypeORM 데코레이터 찾기
+    const decoratorPatterns = [
+      /@OneToMany\s*\(/g,
+      /@ManyToMany\s*\(/g,
+      /@JoinTable\s*\(/g,
+      /@JoinColumn\s*\(/g,
+    ];
+
+    const decoratorMap = {
+      '@OneToMany': 'OneToMany',
+      '@ManyToMany': 'ManyToMany',
+      '@JoinTable': 'JoinTable',
+      '@JoinColumn': 'JoinColumn',
+    };
+
+    decoratorPatterns.forEach((pattern, index) => {
+      if (pattern.test(content)) {
+        const decoratorName = Object.keys(decoratorMap)[index];
+        manualImports.add(decoratorMap[decoratorName]);
+      }
+    });
+
+    return manualImports;
   }
 
   /**
@@ -304,6 +338,7 @@ class EnhancedEntityGenerator {
     newContent: string,
     manualRelations: string[],
     manualImports: string[],
+    manualTypeOrmImports?: Set<string>,
   ): string {
     let mergedContent = newContent;
 
@@ -331,7 +366,38 @@ class EnhancedEntityGenerator {
       }
     }
 
-    // 수동 Import 추가 (중복 제거)
+    // 수동 TypeORM Import 추가 (기존 TypeORM import에 병합)
+    if (manualTypeOrmImports && manualTypeOrmImports.size > 0) {
+      const typeormImportRegex =
+        /import\s*\{\s*([^}]+)\s*\}\s*from\s*['"]typeorm['"];/;
+      const match = mergedContent.match(typeormImportRegex);
+
+      if (match) {
+        const existingImports = match[1]
+          .split(',')
+          .map((imp) => imp.trim())
+          .filter((imp) => imp.length > 0); // 빈 문자열 제거
+        const newImports = Array.from(manualTypeOrmImports).filter(
+          (imp) => !existingImports.includes(imp),
+        );
+
+        if (newImports.length > 0) {
+          const allImports = [...existingImports, ...newImports]
+            .filter((imp) => imp.length > 0) // 빈 문자열 제거
+            .sort()
+            .join(', ');
+          const newImportStatement = `import {\n  ${allImports},\n} from 'typeorm';`;
+          mergedContent = mergedContent.replace(
+            typeormImportRegex,
+            newImportStatement,
+          );
+
+          console.log(`   📦 Added TypeORM imports: ${newImports.join(', ')}`);
+        }
+      }
+    }
+
+    // 수동 Entity Import 추가 (중복 제거)
     if (manualImports.length > 0) {
       const uniqueImports = manualImports.filter((importStmt) => {
         return !mergedContent.includes(importStmt);

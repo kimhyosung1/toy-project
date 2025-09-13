@@ -1,5 +1,5 @@
 // 🤖 Auto-generated entity exports
-// Generated at: 2025-09-13T09:08:24.091Z
+// Generated at: 2025-09-13T09:26:37.099Z
 // Environment: dev
 // Tables: 4
 

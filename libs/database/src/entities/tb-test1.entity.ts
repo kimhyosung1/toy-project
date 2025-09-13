@@ -1,5 +1,11 @@
 import {
-  Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn,
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 
 @Entity('tb_test1')
@@ -12,7 +18,4 @@ export class TbTest1Entity {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
-
-  @OneToMany(() => TbTest1Entity, (test) => test.test1Id)
-  children: TbTest1Entity[];
 }
