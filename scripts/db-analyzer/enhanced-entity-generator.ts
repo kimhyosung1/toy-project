@@ -178,7 +178,7 @@ class EnhancedEntityGenerator {
    * Entity 클래스 내용 생성
    */
   private generateEntityContent(table: TableInfo): string {
-    const entityName = this.toPascalCase(table.tableName);
+    const entityName = this.toPascalCase(table.tableName) + 'Entity';
     const imports = this.generateImports(table);
     const classDecorator = this.generateClassDecorator(table);
     const properties = this.generateProperties(table);
@@ -214,12 +214,14 @@ ${properties}${relations}
     const hasCreatedAt = table.columns.some(
       (col) =>
         col.columnName.toLowerCase().includes('created') &&
-        col.dataType.includes('timestamp'),
+        (col.dataType.includes('timestamp') ||
+          col.dataType.includes('datetime')),
     );
     const hasUpdatedAt = table.columns.some(
       (col) =>
         col.columnName.toLowerCase().includes('updated') &&
-        col.dataType.includes('timestamp'),
+        (col.dataType.includes('timestamp') ||
+          col.dataType.includes('datetime')),
     );
 
     if (hasCreatedAt) imports.add('CreateDateColumn');
@@ -237,7 +239,33 @@ ${properties}${relations}
     }
 
     const importList = Array.from(imports).sort().join(', ');
-    return `import {\n  ${importList},\n} from 'typeorm';`;
+    let importStatements = `import {\n  ${importList},\n} from 'typeorm';`;
+
+    // 관계 Entity들의 import 추가
+    if (this.options.generateRelations && table.foreignKeys.length > 0) {
+      const relatedEntityImports = table.foreignKeys
+        .map((fk) => {
+          const entityName =
+            this.toPascalCase(fk.referencedTableName) + 'Entity';
+          const fileName = this.toKebabCase(fk.referencedTableName);
+
+          // 자기 참조인 경우 import 하지 않음
+          if (fk.referencedTableName === table.tableName) {
+            return null;
+          }
+
+          return `import { ${entityName} } from './${fileName}.entity';`;
+        })
+        .filter((imp) => imp !== null) // null 제거
+        .filter((imp, index, arr) => arr.indexOf(imp) === index) // 중복 제거
+        .join('\n');
+
+      if (relatedEntityImports) {
+        importStatements += '\n' + relatedEntityImports;
+      }
+    }
+
+    return importStatements;
   }
 
   /**
@@ -266,7 +294,14 @@ ${properties}${relations}
    * 프로퍼티 생성
    */
   private generateProperties(table: TableInfo): string {
+    // 외래키 컬럼들은 관계에서 처리하므로 제외
+    const foreignKeyColumns = table.foreignKeys.map((fk) => fk.columnName);
+
     return table.columns
+      .filter((column) => {
+        // 외래키 컬럼은 관계에서만 사용하고 별도 프로퍼티로 생성하지 않음
+        return !foreignKeyColumns.includes(column.columnName);
+      })
       .map((column) => {
         return this.generateColumnProperty(column, table);
       })
@@ -306,12 +341,14 @@ ${properties}${relations}
       // 특별한 날짜 컬럼 처리
       if (
         column.columnName.toLowerCase().includes('created') &&
-        column.dataType.includes('timestamp')
+        (column.dataType.includes('timestamp') ||
+          column.dataType.includes('datetime'))
       ) {
         decorators.push('  @CreateDateColumn()');
       } else if (
         column.columnName.toLowerCase().includes('updated') &&
-        column.dataType.includes('timestamp')
+        (column.dataType.includes('timestamp') ||
+          column.dataType.includes('datetime'))
       ) {
         decorators.push('  @UpdateDateColumn()');
       } else {
@@ -468,7 +505,7 @@ ${properties}${relations}
     }
 
     const relations = table.foreignKeys.map((fk) => {
-      const targetEntity = this.toPascalCase(fk.referencedTableName);
+      const targetEntity = this.toPascalCase(fk.referencedTableName) + 'Entity';
       const propertyName = this.toCamelCase(fk.referencedTableName);
       const joinColumn = this.toCamelCase(fk.columnName);
 
@@ -500,7 +537,7 @@ ${properties}${relations}
 
     // ALL_ENTITIES 배열 생성
     const entityNames = this.schemaResult.tables
-      .map((table) => this.toPascalCase(table.tableName))
+      .map((table) => this.toPascalCase(table.tableName) + 'Entity')
       .sort();
 
     const imports = entityNames
@@ -569,6 +606,12 @@ ${entityNames.map((name) => `  ${name},`).join('\n')}
   }
 
   private toCamelCase(str: string): string {
+    // 이미 camelCase인 경우 그대로 반환
+    if (!/[_-]/.test(str) && /^[a-z][a-zA-Z0-9]*$/.test(str)) {
+      return str;
+    }
+
+    // snake_case나 kebab-case인 경우 변환
     const pascal = this.toPascalCase(str);
     return pascal.charAt(0).toLowerCase() + pascal.slice(1);
   }

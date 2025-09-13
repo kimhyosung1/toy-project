@@ -7,10 +7,10 @@ import {
   OneToMany,
   Index,
 } from 'typeorm';
-import { CommentEntity } from './comment.entity';
+import { TbCommentEntity } from './tb-comment.entity';
 
 @Entity('tb_board')
-export class BoardEntity {
+export class TbBoardEntity {
   @PrimaryGeneratedColumn()
   boardId: number;
 
@@ -33,6 +33,6 @@ export class BoardEntity {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @OneToMany(() => CommentEntity, (comment) => comment.board)
-  comments: CommentEntity[];
+  @OneToMany(() => TbCommentEntity, (comment) => comment.board)
+  comments: TbCommentEntity[];
 }

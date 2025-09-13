@@ -6,7 +6,7 @@ import {
   Repository,
   EntityTarget,
 } from 'typeorm';
-import { BoardEntity, CommentEntity, TestEntity } from './entities';
+import { TbBoardEntity, TbCommentEntity, TbTest1Entity } from './entities';
 import { plainToClass, ClassConstructor } from 'class-transformer';
 import { validate } from 'class-validator';
 

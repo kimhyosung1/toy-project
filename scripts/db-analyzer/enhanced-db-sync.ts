@@ -532,7 +532,11 @@ class EnhancedDbSync {
  */
 async function main() {
   const environment = process.argv[2] || process.env.NODE_ENV || 'dev';
-  const outputBaseDir = process.argv[3] || 'libs/database/src';
+  const outputBaseDirArg = process.argv[3] || 'libs/database/src';
+
+  // 절대 경로로 변환 (프로젝트 루트 기준)
+  const projectRoot = path.resolve(__dirname, '../..');
+  const outputBaseDir = path.resolve(projectRoot, outputBaseDirArg);
 
   console.log(`🚀 Enhanced Database Sync`);
   console.log(`Environment: ${environment}`);

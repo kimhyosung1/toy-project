@@ -6,9 +6,9 @@ This directory contains extracted stored procedures and functions from the **pub
 
 - **Environment:** dev
 - **Database:** public
-- **Procedures:** 2
-- **Functions:** 1
-- **Generated:** 2025-09-12T23:07:12.705Z
+- **Procedures:** 3
+- **Functions:** 2
+- **Generated:** 2025-09-12T23:52:10.984Z
 
 ## 📁 Directory Structure
 
@@ -75,4 +75,4 @@ ts-node scripts/db-analyzer/procedure-extractor.ts schema.json
 ---
 
 > 🤖 **Auto-generated** by Enhanced DB Schema Analyzer  
-> Last updated: 2025-09-12T23:07:12.705Z
+> Last updated: 2025-09-12T23:52:10.984Z

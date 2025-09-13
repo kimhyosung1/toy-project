@@ -8,10 +8,10 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { BoardEntity } from './board.entity';
+import { TbBoardEntity } from './tb-board.entity';
 
 @Entity('tb_comment')
-export class CommentEntity {
+export class TbCommentEntity {
   @PrimaryGeneratedColumn()
   commentId: number;
 
@@ -32,18 +32,18 @@ export class CommentEntity {
   @CreateDateColumn()
   createdAt: Date;
 
-  @ManyToOne(() => BoardEntity, (board) => board.comments, {
+  @ManyToOne(() => TbBoardEntity, (board) => board.comments, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'board_id' })
-  board: BoardEntity;
+  board: TbBoardEntity;
 
-  @ManyToOne(() => CommentEntity, (comment) => comment.children, {
+  @ManyToOne(() => TbCommentEntity, (comment) => comment.children, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'parent_id' })
-  parent: CommentEntity;
+  parent: TbCommentEntity;
 
-  @OneToMany(() => CommentEntity, (comment) => comment.parent)
-  children: CommentEntity[];
+  @OneToMany(() => TbCommentEntity, (comment) => comment.parent)
+  children: TbCommentEntity[];
 }

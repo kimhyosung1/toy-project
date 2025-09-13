@@ -5,7 +5,9 @@
 # DB 스키마를 분석해서 TypeORM Entity와 Repository를 자동 생성합니다.
 #
 # 사용법: ./run-enhanced-db-sync.sh [environment] [options]
-# 예시: ./run-enhanced-db-sync.sh dev --dry-run
+# 예시:
+#  ./scripts/run-enhanced-db-sync.sh dev
+#  ./run-enhanced-db-sync.sh dev --dry-run
 #
 # 환경: dev, qa, prod (기본값: dev)
 # 옵션: --dry-run, --overwrite, --skip-entities, --skip-repositories, --skip-procedures

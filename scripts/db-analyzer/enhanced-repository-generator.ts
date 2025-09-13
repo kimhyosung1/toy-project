@@ -161,6 +161,17 @@ class EnhancedRepositoryGenerator {
     const fileName = `${this.toKebabCase(table.tableName)}.repository.ts`;
     const filePath = path.join(this.options.outputDir, fileName);
 
+    // 같은 테이블을 다루는 기존 Repository 파일이 있는지 확인
+    const existingRepository = await this.findExistingRepositoryForTable(
+      table.tableName,
+    );
+    if (existingRepository) {
+      console.log(
+        `   ⚠️ Skipping ${repositoryName} -> ${fileName} (existing repository found: ${existingRepository})`,
+      );
+      return;
+    }
+
     console.log(`   🔧 Generating ${repositoryName} -> ${fileName}`);
 
     const repositoryContent = this.generateRepositoryContent(table);
@@ -170,11 +181,90 @@ class EnhancedRepositoryGenerator {
   }
 
   /**
+   * 같은 테이블을 다루는 기존 Repository 파일 찾기
+   */
+  private async findExistingRepositoryForTable(
+    tableName: string,
+  ): Promise<string | null> {
+    try {
+      const files = await fs.readdir(this.options.outputDir);
+      const repositoryFiles = files.filter((file) =>
+        file.endsWith('.repository.ts'),
+      );
+
+      for (const file of repositoryFiles) {
+        const filePath = path.join(this.options.outputDir, file);
+        try {
+          const content = await fs.readFile(filePath, 'utf-8');
+
+          // Repository 파일에서 import하는 Entity 파일 찾기
+          const importMatch = content.match(
+            /from ['"`]\.\.\/entities\/([^'"`]+)\.entity['"`]/,
+          );
+          if (importMatch) {
+            const entityFileName = importMatch[1];
+            const entityFilePath = path.join(
+              this.options.outputDir,
+              '../entities',
+              `${entityFileName}.entity.ts`,
+            );
+
+            try {
+              // Entity 파일 읽어서 @Entity 데코레이터 확인
+              const entityContent = await fs.readFile(entityFilePath, 'utf-8');
+              const entityMatch = entityContent.match(
+                /@Entity\(['"`]([^'"`]+)['"`]\)/,
+              );
+              if (entityMatch && entityMatch[1] === tableName) {
+                return file;
+              }
+            } catch (entityError) {
+              // Entity 파일이 없으면 파일명으로 추정
+              const inferredTableName = entityFileName.replace(/-/g, '_');
+              if (inferredTableName === tableName) {
+                return file;
+              }
+            }
+          }
+
+          // Repository 파일명에서 테이블명 추정 (예: board.repository.ts -> tb_board)
+          const repoFileName = file.replace('.repository.ts', '');
+          const possibleTableNames = [
+            repoFileName, // board
+            `tb_${repoFileName}`, // tb_board
+            repoFileName.replace(/-/g, '_'), // board -> board (이미 snake_case인 경우)
+            `tb_${repoFileName.replace(/-/g, '_')}`, // board -> tb_board
+          ];
+
+          if (possibleTableNames.includes(tableName)) {
+            return file;
+          }
+
+          // 직접 Repository 파일에서 @Entity 데코레이터 확인 (inline entity 정의인 경우)
+          const directEntityMatch = content.match(
+            /@Entity\(['"`]([^'"`]+)['"`]\)/,
+          );
+          if (directEntityMatch && directEntityMatch[1] === tableName) {
+            return file;
+          }
+        } catch (error) {
+          // 파일 읽기 실패시 건너뛰기
+          continue;
+        }
+      }
+
+      return null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  /**
    * Repository 클래스 내용 생성
    */
   private generateRepositoryContent(table: TableInfo): string {
-    const entityName = this.toPascalCase(table.tableName);
-    const repositoryName = entityName + 'Repository';
+    const entityName = this.toPascalCase(table.tableName) + 'Entity';
+    const repositoryName = this.toPascalCase(table.tableName) + 'Repository';
     const imports = this.generateImports(table);
     const classComment = this.generateClassComment(table);
     const constructor = this.generateConstructor(table);
@@ -196,7 +286,7 @@ ${methods}
    * Import 문 생성
    */
   private generateImports(table: TableInfo): string {
-    const entityName = this.toPascalCase(table.tableName);
+    const entityName = this.toPascalCase(table.tableName) + 'Entity';
     const entityFileName = this.toKebabCase(table.tableName);
 
     return `import { Injectable } from '@nestjs/common';
@@ -230,7 +320,7 @@ import { ${entityName} } from '../entities/${entityFileName}.entity';`;
    * Constructor 생성
    */
   private generateConstructor(table: TableInfo): string {
-    const entityName = this.toPascalCase(table.tableName);
+    const entityName = this.toPascalCase(table.tableName) + 'Entity';
 
     return `  constructor(
     @InjectRepository(${entityName})
@@ -508,25 +598,47 @@ import { ${entityName} } from '../entities/${entityFileName}.entity';`;
   private async updateIndexFile(): Promise<void> {
     const indexPath = path.join(this.options.outputDir, 'index.ts');
 
-    // 모든 Repository export 문 생성
-    const exports = this.schemaResult.tables
-      .map((table) => {
-        const fileName = this.toKebabCase(table.tableName);
-        return `export * from './${fileName}.repository';`;
-      })
-      .sort();
+    // 실제로 존재하는 모든 Repository 파일들 스캔
+    const existingRepositories = [];
+    const existingExports = [];
+    const existingImports = [];
 
-    // ALL_REPOSITORIES 배열 생성
-    const repositoryNames = this.schemaResult.tables
-      .map((table) => this.toPascalCase(table.tableName) + 'Repository')
-      .sort();
+    try {
+      const files = await fs.readdir(this.options.outputDir);
+      const repositoryFiles = files.filter(
+        (file) => file.endsWith('.repository.ts') && file !== 'index.ts',
+      );
 
-    const imports = repositoryNames
-      .map((name, index) => {
-        const tableName = this.schemaResult.tables[index].tableName;
-        return `import { ${name} } from './${this.toKebabCase(tableName)}.repository';`;
-      })
-      .join('\n');
+      for (const file of repositoryFiles) {
+        const filePath = path.join(this.options.outputDir, file);
+
+        try {
+          // 파일 내용을 읽어서 Repository 클래스명 추출
+          const content = await fs.readFile(filePath, 'utf-8');
+          const classMatch = content.match(/export class (\w+Repository)/);
+
+          if (classMatch) {
+            const repositoryName = classMatch[1];
+            const exportName = file.replace('.repository.ts', '');
+
+            existingRepositories.push(repositoryName);
+            existingExports.push(`export * from './${exportName}.repository';`);
+            existingImports.push(
+              `import { ${repositoryName} } from './${exportName}.repository';`,
+            );
+          }
+        } catch (error) {
+          console.warn(`⚠️ Failed to process ${file}:`, error.message);
+          continue;
+        }
+      }
+    } catch (error) {
+      console.error('❌ Failed to scan repository directory:', error);
+    }
+
+    const exports = existingExports.sort();
+    const repositoryNames = existingRepositories.sort();
+    const imports = existingImports.join('\n');
 
     const content = `// 🤖 Auto-generated repository exports
 // Generated at: ${new Date().toISOString()}

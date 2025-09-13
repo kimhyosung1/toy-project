@@ -1,19 +1,29 @@
-// 모든 엔티티를 한 곳에서 관리
-export * from './board.entity';
-export * from './comment.entity';
-export * from './test.entity';
+// 🤖 Auto-generated entity exports
+// Generated at: 2025-09-12T23:52:10.977Z
+// Environment: dev
+// Tables: 5
+
+export * from './tb-board.entity';
+export * from './tb-comment.entity';
+export * from './tb-keyword-notification.entity';
+export * from './tb-notification.entity';
+export * from './tb-test1.entity';
 
 // 🚀 자동화를 위한 엔티티 배열 export
-import { BoardEntity } from './board.entity';
-import { CommentEntity } from './comment.entity';
-import { TestEntity } from './test.entity';
+import { TbBoardEntity } from './tb-board.entity';
+import { TbCommentEntity } from './tb-comment.entity';
+import { TbKeywordNotificationEntity } from './tb-keyword-notification.entity';
+import { TbNotificationEntity } from './tb-notification.entity';
+import { TbTest1Entity } from './tb-test1.entity';
 
 /**
- * 모든 엔티티 배열 - 새 엔티티 추가 시 여기만 수정하면 됨!
+ * 모든 엔티티 배열 - 자동 생성됨
+ * 새 엔티티가 DB에 추가되면 자동으로 여기에 포함됩니다.
  */
 export const ALL_ENTITIES = [
-  TestEntity,
-  BoardEntity,
-  CommentEntity,
-  // 👆 새 엔티티는 여기에만 추가하면 자동으로 모든 곳에 적용!
+  TbBoardEntity,
+  TbCommentEntity,
+  TbKeywordNotificationEntity,
+  TbNotificationEntity,
+  TbTest1Entity,
 ];
