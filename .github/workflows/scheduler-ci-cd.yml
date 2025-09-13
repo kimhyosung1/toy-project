@@ -2,7 +2,7 @@ name: 🕒 Scheduler Service CI/CD
 
 on:
   push:
-    branches: [main, develop]
+    branches: [dev, qa, production]
     paths:
       - 'apps/scheduler/**'
       - 'libs/**'
@@ -12,7 +12,7 @@ on:
       - 'docker-compose.yml'
       - '.github/workflows/scheduler-ci-cd.yml'
   pull_request:
-    branches: [main]
+    branches: [dev, qa, production]
     paths:
       - 'apps/scheduler/**'
       - 'libs/**'

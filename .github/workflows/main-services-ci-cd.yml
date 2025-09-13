@@ -2,7 +2,7 @@ name: 🚀 Main Services CI/CD
 
 on:
   push:
-    branches: [main, develop]
+    branches: [dev, qa, production]
     paths:
       - 'apps/gateway/**'
       - 'apps/board/**'
@@ -18,7 +18,7 @@ on:
       - 'apps/scheduler/**'
       - '.github/workflows/scheduler-ci-cd.yml'
   pull_request:
-    branches: [main]
+    branches: [dev, qa, production]
     paths:
       - 'apps/gateway/**'
       - 'apps/board/**'
