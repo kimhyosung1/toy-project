@@ -53,16 +53,30 @@ services:
     restart: unless-stopped
     command: ['node', 'dist/apps/notification/main.js']
 
-  scheduler:
+  account:
     build:
       context: .
       args:
         NODE_ENV: ${NODE_ENV:-dev}
-        TARGET_APPS: scheduler
-    container_name: scheduler
+        TARGET_APPS: account
+    container_name: account
     ports:
-      - '${SCHEDULER_SERVICE_PORT:-3004}:3004'
+      - '${ACCOUNT_SERVICE_PORT:-3005}:3005'
     environment:
       <<: *common-env
     restart: unless-stopped
-    command: ['node', 'dist/apps/scheduler/main.js']
+    command: ['node', 'dist/apps/account/main.js']
+
+  file:
+    build:
+      context: .
+      args:
+        NODE_ENV: ${NODE_ENV:-dev}
+        TARGET_APPS: file
+    container_name: file
+    ports:
+      - '${FILE_SERVICE_PORT:-3006}:3006'
+    environment:
+      <<: *common-env
+    restart: unless-stopped
+    command: ['node', 'dist/apps/file/main.js']

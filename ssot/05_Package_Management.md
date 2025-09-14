@@ -153,10 +153,12 @@
   "build": "nest build", // 전체 빌드
   "start": "nest start", // 기본 시작
   "start:dev": "nest start --watch", // 개발 모드
-  "start:dev:gateway": "NODE_ENV=dev nest start gateway --watch --debug",
-  "start:dev:board": "NODE_ENV=dev nest start board --watch --debug",
-  "start:dev:notification": "NODE_ENV=dev nest start notification --watch --debug",
-  "start:dev:scheduler": "NODE_ENV=dev nest start scheduler --watch --debug"
+  "start:dev:gateway": "NODE_ENV=dev nest start gateway --watch --debug --builder swc",
+  "start:dev:board": "NODE_ENV=dev nest start board --watch --debug --builder swc",
+  "start:dev:notification": "NODE_ENV=dev nest start notification --watch --debug --builder swc",
+  "start:dev:scheduler": "NODE_ENV=dev nest start scheduler --watch --debug --builder swc",
+  "start:dev:account": "NODE_ENV=dev nest start account --watch --debug --builder swc",
+  "start:dev:file": "NODE_ENV=dev nest start file --watch --debug --builder swc"
 }
 ```
 
@@ -167,7 +169,10 @@
   "start:prod": "node dist/apps/toy-project/main",
   "start:prod:gateway": "node dist/apps/gateway/main",
   "start:prod:board": "node dist/apps/board/main",
-  "start:prod:notification": "node dist/apps/notification/main"
+  "start:prod:notification": "node dist/apps/notification/main",
+  "start:prod:scheduler": "node dist/apps/scheduler/main",
+  "start:prod:account": "node dist/apps/account/main",
+  "start:prod:file": "node dist/apps/file/main"
 }
 ```
 
@@ -212,7 +217,9 @@ apps/
 ├── gateway/          # API Gateway (:3000)
 ├── board/           # Board Service (:3001)
 ├── notification/    # Notification Service (:3002)
-└── scheduler/       # Scheduler Service (:3004)
+├── scheduler/       # Scheduler Service (:3004)
+├── account/         # Account Service (:3005)
+└── file/            # File Service (:3006)
 ```
 
 ### 3. 라이브러리 구조
@@ -349,6 +356,8 @@ pnpm run start:dev:gateway &
 pnpm run start:dev:board &
 pnpm run start:dev:notification &
 pnpm run start:dev:scheduler &
+pnpm run start:dev:account &
+pnpm run start:dev:file &
 ```
 
 ## 🔒 보안 패키지 현황
@@ -585,10 +594,10 @@ echo "coverage/" >> .gitignore
 
 ### 운영 중인 핵심 패키지
 
-- **NestJS v11**: 안정적인 프레임워크 기반
+- **NestJS v11**: 안정적인 프레임워크 기반 (6개 마이크로서비스)
 - **TypeScript v5.1.3**: 타입 안전성 보장
 - **pnpm v8**: 효율적인 패키지 관리
-- **SWC**: 15.6% 빌드 성능 향상
+- **SWC**: 15.6% 빌드 성능 향상 (모든 앱 적용)
 
 ### 적용된 보안 패키지
 

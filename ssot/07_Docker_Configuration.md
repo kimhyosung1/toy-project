@@ -15,7 +15,8 @@
 │  │  │ :3000   │  │                 │   ││
 │  │  └─────────┘  │ Board      :3001│   ││
 │  │       │       │ Notification:3002│   ││
-│  │       │       │ Scheduler   :3004│   ││
+│  │       │       │ Account    :3005│   ││
+│  │       │       │ File       :3006│   ││
 │  │       └───────┤                 │   ││
 │  │               └─────────────────┘   ││
 │  └─────────────────────────────────────┘│
@@ -30,17 +31,20 @@
 
 ### 서비스 역할 분담
 
-| 서비스           | 포트 | 역할                  | 통신 방식 |
-| ---------------- | ---- | --------------------- | --------- |
-| **Gateway**      | 3000 | API Gateway, 라우팅   | HTTP      |
-| **Board**        | 3001 | 게시판 비즈니스 로직  | TCP       |
-| **Notification** | 3002 | 알림 처리, Queue 관리 | TCP       |
-| **Scheduler**    | 3004 | 배치 작업, 스케줄링   | TCP       |
+| 서비스           | 포트 | 역할                   | 통신 방식 | 상태    |
+| ---------------- | ---- | ---------------------- | --------- | ------- |
+| **Gateway**      | 3000 | API Gateway, 라우팅    | HTTP      | ✅ 운영 |
+| **Board**        | 3001 | 게시판 비즈니스 로직   | TCP       | ✅ 운영 |
+| **Notification** | 3002 | 알림 처리, Queue 관리  | TCP       | ✅ 운영 |
+| **Account**      | 3005 | 계정 관리, 사용자 인증 | TCP       | ✅ 운영 |
+| **File**         | 3006 | 파일 관리 서비스       | TCP       | ✅ 운영 |
+
+**참고**: Scheduler는 별도 docker-compose.scheduler.yml에서 관리
 
 ### 🔧 새로운 서비스 Docker 추가 패턴
 
-**포트 할당**: 3000번대 순차 할당 (다음: 3005, 3006, 3007...)
-**컨테이너명**: 서비스명 소문자 (예: auth, file, payment)
+**포트 할당**: 3000번대 순차 할당 (다음: 3007, 3008, 3009...)
+**컨테이너명**: 서비스명 소문자 (예: auth, payment, order)
 **환경변수**: `{SERVICE_NAME}_SERVICE_PORT` 패턴
 
 ### 새 서비스 docker-compose.yml 템플릿
@@ -329,6 +333,71 @@ DOCKER_BUILDKIT=1 ./docker.sh dev up -d --build
 - **내부 통신**: Docker 네트워크 격리
 - **외부 접근**: Gateway를 통한 단일 진입점
 - **SSL/TLS**: 프로덕션 환경 HTTPS 적용
+
+## 📋 신규 앱 통합 체크리스트
+
+### 필수 업데이트 파일들
+
+새로운 마이크로서비스 앱 추가 시 **반드시 업데이트해야 하는 파일들**:
+
+#### 1. 설정 파일
+
+- `libs/core/src/config/config.service.ts` - 마이크로서비스 옵션 추가
+- `libs/proxy/src/common-proxy-client.ts` - 프록시 클라이언트 설정
+- `env/dev.env` (및 qa.env, prod.env) - 포트 환경변수 추가
+
+#### 2. 빌드 설정
+
+- `package.json` - 빌드/실행 스크립트 추가
+- `nest-cli.json` - NestJS 프로젝트 설정 추가
+
+#### 3. Docker 설정
+
+- `docker-compose.yml` - 새 서비스 컨테이너 추가
+- 필요시 `Dockerfile.{app-name}` 생성
+
+#### 4. 문서 업데이트
+
+- `ssot/00_MASTER_OVERVIEW.md` - 서비스 목록 업데이트
+- `ssot/02_System_Architecture.md` - 아키텍처 다이어그램 업데이트
+- 기타 관련 SSOT 문서들
+
+### Docker Compose 템플릿
+
+```yaml
+{app-name}:
+  build:
+    context: .
+    args:
+      NODE_ENV: ${NODE_ENV:-dev}
+      TARGET_APPS: {app-name}
+  container_name: {app-name}
+  ports:
+    - '${{{APP_NAME}_SERVICE_PORT:-{PORT}}:{PORT}'
+  environment:
+    <<: *common-env
+  restart: unless-stopped
+  command: ['node', 'dist/apps/{app-name}/main.js']
+```
+
+### 포트 할당 규칙
+
+**현재 할당**: Gateway(3000), Board(3001), Notification(3002), Account(3005), File(3006)  
+**다음 사용 가능**: 3007, 3008, 3009...
+
+### 검증 방법
+
+```bash
+# 1. Docker Compose 설정 검증
+docker-compose config
+
+# 2. 빌드 테스트
+docker-compose build {app-name}
+
+# 3. 실행 테스트
+docker-compose up -d {app-name}
+docker-compose ps
+```
 
 ---
 

@@ -103,6 +103,26 @@
       "compilerOptions": {
         "tsConfigPath": "apps/scheduler/tsconfig.app.json"
       }
+    },
+    "account": {
+      "type": "application",
+      "root": "apps/account",
+      "entryFile": "main",
+      "sourceRoot": "apps/account/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/account/tsconfig.app.json",
+        "builder": "swc"
+      }
+    },
+    "file": {
+      "type": "application",
+      "root": "apps/file",
+      "entryFile": "main",
+      "sourceRoot": "apps/file/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/file/tsconfig.app.json",
+        "builder": "swc"
+      }
     }
   }
 }

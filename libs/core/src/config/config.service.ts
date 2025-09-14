@@ -193,6 +193,64 @@ export class CustomConfigService {
     };
   }
 
+  // NestFactory.createMicroservice()용 옵션 (MicroserviceOptions)
+  get accountMicroserviceOptions(): MicroserviceOptions {
+    return {
+      transport: Transport.TCP,
+      options: {
+        host: this.configService.get<string>(
+          'ACCOUNT_SERVICE_HOST',
+          '127.0.0.1',
+        ),
+        port: parseInt(
+          this.configService.get<string>('ACCOUNT_SERVICE_PORT', '3005'),
+        ),
+      },
+    };
+  }
+
+  // ClientProxyFactory.create()용 옵션 (ClientOptions)
+  get accountServiceOptions(): ClientOptions {
+    return {
+      transport: Transport.TCP,
+      options: {
+        host: this.configService.get<string>(
+          'ACCOUNT_SERVICE_HOST',
+          '127.0.0.1',
+        ),
+        port: parseInt(
+          this.configService.get<string>('ACCOUNT_SERVICE_PORT', '3005'),
+        ),
+      },
+    };
+  }
+
+  // NestFactory.createMicroservice()용 옵션 (MicroserviceOptions)
+  get fileMicroserviceOptions(): MicroserviceOptions {
+    return {
+      transport: Transport.TCP,
+      options: {
+        host: this.configService.get<string>('FILE_SERVICE_HOST', '127.0.0.1'),
+        port: parseInt(
+          this.configService.get<string>('FILE_SERVICE_PORT', '3006'),
+        ),
+      },
+    };
+  }
+
+  // ClientProxyFactory.create()용 옵션 (ClientOptions)
+  get fileServiceOptions(): ClientOptions {
+    return {
+      transport: Transport.TCP,
+      options: {
+        host: this.configService.get<string>('FILE_SERVICE_HOST', '127.0.0.1'),
+        port: parseInt(
+          this.configService.get<string>('FILE_SERVICE_PORT', '3006'),
+        ),
+      },
+    };
+  }
+
   // Environment
   get environment(): string {
     return this.configService.get<string>('NODE_ENV', 'dev');

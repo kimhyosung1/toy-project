@@ -24,6 +24,8 @@ export enum ProxyClientProvideService {
   NOTIFICATION_SERVICE = 'NOTIFICATION_SERVICE',
   BOARD_SERVICE = 'BOARD_SERVICE',
   SCHEDULER_SERVICE = 'SCHEDULER_SERVICE',
+  ACCOUNT_SERVICE = 'ACCOUNT_SERVICE',
+  FILE_SERVICE = 'FILE_SERVICE',
 }
 
 const TEST2_FACTORY = {
@@ -58,11 +60,29 @@ const SCHEDULER_FACTORY = {
   inject: [CustomConfigService],
 };
 
+const ACCOUNT_FACTORY = {
+  provide: ProxyClientProvideService.ACCOUNT_SERVICE,
+  useFactory: (configService: CustomConfigService) => {
+    return ClientProxyFactory.create(configService.accountServiceOptions);
+  },
+  inject: [CustomConfigService],
+};
+
+const FILE_FACTORY = {
+  provide: ProxyClientProvideService.FILE_SERVICE,
+  useFactory: (configService: CustomConfigService) => {
+    return ClientProxyFactory.create(configService.fileServiceOptions);
+  },
+  inject: [CustomConfigService],
+};
+
 export {
   TEST2_FACTORY,
   NOTIFICATION_FACTORY,
   BOARD_FACTORY,
   SCHEDULER_FACTORY,
+  ACCOUNT_FACTORY,
+  FILE_FACTORY,
 };
 
 export const CustomMessagePatterns = {
@@ -70,6 +90,8 @@ export const CustomMessagePatterns = {
   BoardHealthCheck: 'BoardHealthCheck',
   NotificationHealthCheck: 'NotificationHealthCheck',
   SchedulerHealthCheck: 'SchedulerHealthCheck',
+  AccountHealthCheck: 'AccountHealthCheck',
+  FileHealthCheck: 'FileHealthCheck',
 
   // Board
   CreateBoard: 'CreateBoard',
@@ -83,4 +105,17 @@ export const CustomMessagePatterns = {
   SchedulerStart: 'SchedulerStart',
   SchedulerStop: 'SchedulerStop',
   SchedulerStatus: 'SchedulerStatus',
+
+  // Account
+  AccountInfo: 'AccountInfo',
+  CreateAccount: 'CreateAccount',
+  UpdateAccount: 'UpdateAccount',
+  DeleteAccount: 'DeleteAccount',
+
+  // File
+  UploadFile: 'UploadFile',
+  DownloadFile: 'DownloadFile',
+  ListFiles: 'ListFiles',
+  DeleteFile: 'DeleteFile',
+  FileInfo: 'FileInfo',
 };

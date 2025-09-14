@@ -59,6 +59,8 @@ graph TB
         Board[Board Service :3001]
         Notification[Notification Service :3002]
         Scheduler[Scheduler Service :3004]
+        Account[Account Service :3005]
+        File[File Service :3006]
     end
 
     subgraph "External Services"
@@ -74,6 +76,8 @@ graph TB
     Gateway --> Board
     Gateway --> Notification
     Gateway --> Scheduler
+    Gateway --> Account
+    Gateway --> File
 
     Board --> MySQL
     Board --> Redis
@@ -84,6 +88,8 @@ graph TB
     Board -.-> Docker
     Notification -.-> Docker
     Scheduler -.-> Docker
+    Account -.-> Docker
+    File -.-> Docker
 ```
 
 ## 🐳 컨테이너 아키텍처
@@ -122,11 +128,13 @@ services:
 | **Board**        | 3001 | `board`        | TCP       | 게시판 CRUD, 댓글 관리  |
 | **Notification** | 3002 | `notification` | TCP       | 키워드 알림, Queue 처리 |
 | **Scheduler**    | 3004 | `scheduler`    | TCP       | 스케줄링, Cron 작업     |
+| **Account**      | 3005 | `account`      | TCP       | 계정 관리, 사용자 인증  |
+| **File**         | 3006 | `file`         | TCP       | 파일 업로드/다운로드    |
 
 **통신 플로우:**
 
 ```
-Client (HTTP) → Gateway (HTTP:3000) → Microservices (TCP:3001,3002,3004)
+Client (HTTP) → Gateway (HTTP:3000) → Microservices (TCP:3001,3002,3004,3005,3006)
 ```
 
 ## 🏗️ 마이크로서비스 상세 구조
@@ -249,6 +257,89 @@ apps/scheduler/src/
 - 스케줄러 상태 모니터링
 - 데이터베이스 정리 작업
 - 알림 배치 처리
+
+### 5. Account Service (:3005)
+
+**역할**: 계정 관리 및 사용자 인증 (기본 구조)
+
+**기술 구성**:
+
+- **TCP 마이크로서비스**: NestJS 마이크로서비스
+- **데이터베이스**: TypeORM + MySQL (연결됨)
+- **검증**: ValidationPipe 전역 적용
+- **상태**: 기본 헬스체크 구현
+
+**구성요소**:
+
+```typescript
+apps/account/src/
+├── main.ts                    # 마이크로서비스 진입점 (포트 3005)
+├── account.module.ts          # 계정 모듈 (Database, Redis, Interceptor 연결)
+├── account.controller.ts      # TCP 컨트롤러 (헬스체크만)
+└── account.service.ts         # 기본 서비스 (헬스체크 구현)
+```
+
+**현재 구현된 기능**:
+
+- ✅ 마이크로서비스 기본 구조
+- ✅ 헬스체크 (`AccountHealthCheck`)
+- ✅ 데이터베이스 연결 (DatabaseService)
+- ✅ Redis 연결 (RedisModule)
+- ✅ 자동 응답 변환 인터셉터 (InterceptorModule)
+- ✅ 전역 예외 처리 (AllExceptionFilter)
+- ✅ 유틸리티 서비스 (UtilityModule)
+
+**향후 확장 예정**:
+
+- 사용자 등록 및 인증
+- JWT 토큰 발급/검증
+- 계정 정보 CRUD
+- 권한 관리 (RBAC)
+
+### 6. File Service (:3006)
+
+**역할**: 파일 관리 서비스 (기본 구조)
+
+**기술 구성**:
+
+- **TCP 마이크로서비스**: NestJS 마이크로서비스
+- **데이터베이스**: TypeORM + MySQL (연결됨)
+- **검증**: ValidationPipe 전역 적용
+- **상태**: 기본 헬스체크 구현
+
+**구성요소**:
+
+```typescript
+apps/file/src/
+├── main.ts                    # 마이크로서비스 진입점 (포트 3006)
+├── file.module.ts             # 파일 모듈 (Database, Redis, Interceptor 연결)
+├── file.controller.ts         # TCP 컨트롤러 (헬스체크만)
+└── file.service.ts            # 기본 서비스 (헬스체크 구현)
+```
+
+**현재 구현된 기능**:
+
+- ✅ 마이크로서비스 기본 구조
+- ✅ 헬스체크 (`FileHealthCheck`)
+- ✅ 데이터베이스 연결 (DatabaseService)
+- ✅ Redis 연결 (RedisModule)
+- ✅ 자동 응답 변환 인터셉터 (InterceptorModule)
+- ✅ 전역 예외 처리 (AllExceptionFilter)
+- ✅ 유틸리티 서비스 (UtilityModule)
+
+**향후 확장 예정**:
+
+- 파일 메타데이터 관리
+- 파일 권한 제어
+- 파일 업로드/다운로드 (아키텍처 결정 후)
+- 파일 버전 관리
+
+**🔥 아키텍처 검토 과제**:
+파일 처리를 Gateway에서 직접 할지, File Service에서 할지 성능/비용 vs 관심사분리 관점에서 결정 필요
+
+- Option A: Gateway 직접 처리 (성능 우선)
+- Option B: File Service 처리 (관심사 분리)
+- Option C: 하이브리드 (업계 표준)
 
 ## 📚 공유 라이브러리 구조
 
@@ -627,7 +718,30 @@ docker-compose logs -f board  # 실시간
 - **게시판 시스템**: CRUD + 댓글 관리
 - **알림 처리**: Redis Queue 기반 비동기 처리
 - **스케줄링**: Cron 기반 배치 작업
+- **계정 관리**: 사용자 인증 및 계정 관리
+- **파일 관리**: 파일 업로드/다운로드 시스템
 - **보안**: bcrypt 암호화 + 자동 검증
+
+## 🚀 향후 개선 과제
+
+### 1. 파일 처리 아키텍처 최적화 🔥
+
+**현재 상황**: File App에서 파일 처리 (TCP 통신 경유)  
+**검토 과제**: Gateway 직접 처리 vs File Service 처리
+
+**옵션 분석**:
+
+- **Option A**: Gateway 직접 처리 (성능 우선) - 네트워크 비용 절약, 응답속도 향상
+- **Option B**: File Service 처리 (관심사 분리) - 마이크로서비스 원칙 준수
+- **Option C**: 하이브리드 (업계 표준) - Gateway는 업로드/다운로드, Service는 메타데이터
+
+**결정 기준**: 파일 크기, 처리량 요구사항, 비용 효율성, 운영 복잡도
+
+### 2. 기술 부채 및 개선사항
+
+**서비스 확장성**: 현재 기본 헬스체크만 → 실제 비즈니스 로직 구현  
+**모니터링 강화**: 기본 로깅 → 프로덕션 레디 모니터링 (Prometheus, Jaeger)  
+**테스트 커버리지**: 기본 구조 → 90% 이상 커버리지 달성
 
 ## 🔧 새로운 서비스 추가 아키텍처 패턴
 

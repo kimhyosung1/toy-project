@@ -95,6 +95,16 @@
    - 시스템 유지보수 작업
    - 자동화된 배치 처리
 
+5. **Account Service** (Port: 3005)
+   - 계정 관리 및 사용자 인증
+   - 기본 헬스체크 구현
+   - 향후 JWT 토큰 관리 예정
+
+6. **File Service** (Port: 3006)
+   - 파일 관리 서비스
+   - 기본 헬스체크 구현
+   - 파일 처리 아키텍처 검토 중 (Gateway vs Service)
+
 #### 통신 방식
 
 - **TCP 프로토콜** 기반 마이크로서비스 간 통신
@@ -157,3 +167,5 @@
 - **Board Service**: 게시판 비즈니스 로직 처리
 - **Notification Service**: 알림 처리 및 Queue 관리
 - **Scheduler Service**: 스케줄링 및 배치 작업
+- **Account Service**: 계정 관리 서비스 (기본 구조)
+- **File Service**: 파일 관리 서비스 (기본 구조)
