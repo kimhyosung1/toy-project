@@ -24,8 +24,108 @@ jobs:
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # 전체 히스토리 가져오기 (변경 감지용)
+
+      - name: 🔍 Detect Changed Apps
+        id: detect-apps
+        run: |
+          echo "🔍 ===== CI/CD Detection Started ====="
+          echo "📅 Timestamp: $(date '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "🌿 Branch: ${{ github.ref_name }}"
+          echo "📝 Event: ${{ github.event_name }}"
+
+          # 🚫 자동 커밋 스킵 체크
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+          echo "💬 Last commit message: $COMMIT_MSG"
+
+          if echo "$COMMIT_MSG" | grep -qE "\[skip ci\]|\[ci skip\]|🤖 Auto-sync"; then
+            echo "🤖 Auto-commit detected - SKIPPING BUILD"
+            echo "skip_build=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          echo "👤 Manual commit detected - PROCEEDING"
+
+          # 🔍 메인 서비스 앱 목록 생성
+          # 1. 별도 CI/CD 파일 스캔
+          # .github/workflows/notification-ci-cd.yml  → notification 제외
+          # .github/workflows/scheduler-ci-cd.yml     → scheduler 제외
+          # .github/workflows/main-services-ci-cd.yml → 제외 대상 아님
+
+          # # 2. apps 폴더 스캔 + 동적 제외
+          # apps/account/      ✅ 포함 (별도 CI/CD 없음)
+          # apps/board/        ✅ 포함 (별도 CI/CD 없음)  
+          # apps/file/         ✅ 포함 (별도 CI/CD 없음)
+          # apps/gateway/      ✅ 포함 (별도 CI/CD 없음)
+          # apps/notification/ ❌ 제외 (notification-ci-cd.yml 존재)
+          # apps/scheduler/    ❌ 제외 (scheduler-ci-cd.yml 존재)
+          echo ""
+          echo "🔍 ===== Discovering Main Service Apps ====="
+          MAIN_APPS=$(find apps -maxdepth 1 -type d -name "*" ! -name "apps" ! -name "notification" ! -name "scheduler" -exec basename {} \; | tr '\n' ',' | sed 's/,$//')
+          echo "📱 Available main service apps: $MAIN_APPS"
+          echo "❌ Excluded apps: notification, scheduler (separate CI/CD)"
+
+          # 📁 변경된 파일 목록 (안전한 방식)
+          echo ""
+          echo "📁 ===== Analyzing Changed Files ====="
+          if git rev-parse HEAD~1 >/dev/null 2>&1; then
+            CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
+            echo "📊 Comparison: HEAD~1 vs HEAD"
+          else
+            CHANGED_FILES=$(git ls-files)
+            echo "📊 First commit detected - analyzing all files"
+          fi
+
+          echo "📄 Changed files count: $(echo "$CHANGED_FILES" | wc -l)"
+          echo "📄 Changed files:"
+          echo "$CHANGED_FILES" | head -20
+          if [ $(echo "$CHANGED_FILES" | wc -l) -gt 20 ]; then
+            echo "... and $(($(echo "$CHANGED_FILES" | wc -l) - 20)) more files"
+          fi
+
+          # 🎯 변경된 앱 감지
+          echo ""
+          echo "🎯 ===== App Change Detection ====="
+          CHANGED_APPS=""
+
+          # 핵심 파일 변경 시 전체 빌드 (우선 체크)
+          CORE_FILES=$(echo "$CHANGED_FILES" | grep -E "^(libs/|package\.json|pnpm-lock\.yaml|tsconfig|nest-cli\.json)" || true)
+          if [ -n "$CORE_FILES" ]; then
+            echo "🔄 Core files changed - FULL BUILD required:"
+            echo "$CORE_FILES"
+            CHANGED_APPS="$MAIN_APPS"
+            echo "✅ Building all apps: $CHANGED_APPS"
+          else
+            echo "📱 Checking individual app changes..."
+            # 개별 앱 변경 체크
+            for app in ${MAIN_APPS//,/ }; do
+              APP_FILES=$(echo "$CHANGED_FILES" | grep "^apps/$app/" || true)
+              if [ -n "$APP_FILES" ]; then
+                CHANGED_APPS="${CHANGED_APPS:+$CHANGED_APPS,}$app"
+                echo "✅ App '$app' changed ($(echo "$APP_FILES" | wc -l) files)"
+              else
+                echo "⚪ App '$app' unchanged"
+              fi
+            done
+            
+            # 변경된 앱이 없으면 전체 빌드 (안전장치)
+            if [ -z "$CHANGED_APPS" ]; then
+              echo "⚠️  No specific apps detected - FALLBACK to full build"
+              CHANGED_APPS="$MAIN_APPS"
+            fi
+          fi
+
+          echo ""
+          echo "🎯 ===== Final Decision ====="
+          echo "🚀 TARGET_APPS: $CHANGED_APPS"
+          echo "📊 Apps to build: $(echo "$CHANGED_APPS" | tr ',' '\n' | wc -l)"
+
+          echo "target_apps=$CHANGED_APPS" >> $GITHUB_OUTPUT
+          echo "skip_build=false" >> $GITHUB_OUTPUT
+          echo "🔍 ===== Detection Completed ====="
 
       - name: 🔐 Login to Container Registry
+        if: steps.detect-apps.outputs.skip_build != 'true'
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -33,6 +133,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 📝 Extract metadata
+        if: steps.detect-apps.outputs.skip_build != 'true'
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -43,6 +144,7 @@ jobs:
             type=raw,value=latest,enable=${{ github.ref_name == 'production' }}
 
       - name: 🏗️ Build and push Docker image
+        if: steps.detect-apps.outputs.skip_build != 'true'
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -52,4 +154,24 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             NODE_ENV=${{ github.ref_name == 'production' && 'production' || github.ref_name }}
-            TARGET_APPS=gateway,board
+            TARGET_APPS=${{ steps.detect-apps.outputs.target_apps }}
+
+      - name: 📋 Build Summary
+        if: always()
+        run: |
+          echo "📋 ===== CI/CD Build Summary ====="
+          echo "📅 Completed: $(date '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "🌿 Branch: ${{ github.ref_name }}"
+
+          if [ "${{ steps.detect-apps.outputs.skip_build }}" = "true" ]; then
+            echo "🤖 Result: BUILD SKIPPED"
+            echo "📝 Reason: Auto-commit detected ([skip ci] tag)"
+            echo "💡 This prevents infinite CI/CD loops from automated commits"
+          else
+            echo "✅ Result: BUILD COMPLETED"
+            echo "🎯 Built apps: ${{ steps.detect-apps.outputs.target_apps }}"
+            echo "📊 Total apps built: $(echo "${{ steps.detect-apps.outputs.target_apps }}" | tr ',' '\n' | wc -l)"
+            echo "🐳 Docker image: ${{ env.REGISTRY }}/${{ github.repository }}/${{ env.IMAGE_NAME }}"
+            echo "🏷️  Image tags: ${{ steps.meta.outputs.tags }}"
+          fi
+          echo "📋 ===== Summary Complete ====="

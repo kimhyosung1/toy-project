@@ -3,6 +3,17 @@ name: 🔄 Branch-specific Database Sync
 on:
   push:
     branches: [dev, qa, production]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to sync (dev/qa/prod)'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - qa
+          - prod
 
 env:
   NODE_VERSION: '22'
@@ -30,22 +41,43 @@ jobs:
           echo "Event: ${{ github.event_name }}"
           echo "Branch: ${{ github.ref_name }}"
           echo "Manual Environment: ${{ github.event.inputs.environment || 'N/A' }}"
+      - name: 🚫 Skip Auto-Commit Loops
+        run: |
+          # 자동 커밋에서 온 경우 스킵
+          if [ "${{ github.event_name }}" = "push" ]; then
+            COMMIT_MSG=$(git log -1 --pretty=%B)
+            if echo "$COMMIT_MSG" | grep -qE "\[skip ci\]|\[ci skip\]|🤖 Auto-sync"; then
+              echo "🤖 Auto-commit detected, skipping ORM generation"
+              echo "SKIP_ORM=true" >> $GITHUB_ENV
+            else
+              echo "👤 Manual commit detected, proceeding with ORM generation"
+              echo "SKIP_ORM=false" >> $GITHUB_ENV
+            fi
+          else
+            echo "🔧 Manual workflow dispatch, proceeding with ORM generation"
+            echo "SKIP_ORM=false" >> $GITHUB_ENV
+          fi
+
       - name: 🛎️ Checkout Repository
+        if: env.SKIP_ORM != 'true'
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
       - name: 🟢 Setup Node.js
+        if: env.SKIP_ORM != 'true'
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: 📦 Install Global Dependencies
+        if: env.SKIP_ORM != 'true'
         run: |
           npm install -g ts-node typescript
 
       - name: 🔧 Setup Database Environment
+        if: env.SKIP_ORM != 'true'
         run: |
           case "${{ github.ref_name }}" in
             "dev")
@@ -73,6 +105,7 @@ jobs:
           esac
 
       - name: 🚀 Run Database Sync & Auto Commit
+        if: env.SKIP_ORM != 'true'
         run: |
           # 환경 매핑 (수동 실행 시 입력값 우선)
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
@@ -109,4 +142,15 @@ jobs:
             echo "✅ Changes committed and pushed!"
           else
             echo "📝 No changes detected"
+          fi
+
+      - name: 📋 ORM Generation Summary
+        if: always()
+        run: |
+          if [ "${{ env.SKIP_ORM }}" = "true" ]; then
+            echo "🤖 ORM Generation skipped - Auto-commit loop prevention"
+            echo "This prevents infinite CI/CD loops from auto-generated commits"
+          else
+            echo "✅ ORM Generation completed successfully"
+            echo "Database schema has been synchronized"
           fi
