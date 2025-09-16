@@ -1,4 +1,4 @@
-# Database Management - 자동화된 DB 관리 시스템
+# 06_Database Management - 자동화된 DB 관리 시스템
 
 ## 🎯 개요
 

@@ -7,7 +7,7 @@
 **프로젝트명**: NestJS 마이크로서비스 스켈레톤
 **프로젝트 성격**: 즉시 사용 가능한 완성도 높은 MSA 템플릿
 **버전**: 0.0.1
-**작성일**: 2024년
+**작성일**: 2025년
 **아키텍처**: MSA (Microservice Architecture)
 **기술 스택**: NestJS v11, TypeScript v5.1.3, MySQL, Redis
 **런타임**: Node.js v22 (LTS)
@@ -77,25 +77,30 @@
 #### 마이크로서비스 구성 (현재 운영 중)
 
 1. **Gateway Service** (Port: 3000)
+
    - API Gateway 역할
    - 외부 요청 라우팅
    - Swagger API 문서 제공
 
 2. **Board Service** (Port: 3001)
+
    - 게시글/댓글 CRUD
    - 비밀번호 암호화 (bcrypt)
    - 자동화된 응답 검증/변환
 
 3. **Notification Service** (Port: 3002)
+
    - 알림 처리 서비스
    - 다양한 알림 채널 지원 (Slack, Email, Sentry)
 
 4. **Scheduler Service** (Port: 3004)
+
    - 정기 작업 실행
    - 시스템 유지보수 작업
    - 자동화된 배치 처리
 
 5. **Account Service** (Port: 3005)
+
    - 계정 관리 및 사용자 인증
    - 기본 헬스체크 구현
    - 향후 JWT 토큰 관리 예정
@@ -115,16 +120,23 @@
 #### 주요 엔티티
 
 1. **BoardEntity** (tb_board)
+
    - 게시글 정보 저장
    - 비밀번호 해시 저장
 
 2. **CommentEntity** (tb_comment)
+
    - 댓글 및 대댓글 저장
    - 계층형 구조 (parent_id)
 
-3. **KeywordNotificationEntity** (tb_keyword_notification)
-   - 사용자별 알림 키워드 저장
-   - author + keyword 유니크 제약
+3. **~~KeywordNotificationEntity~~** (~~tb_keyword_notification~~)
+
+   - ~~사용자별 알림 키워드 저장~~ (@deprecated, 2025-09-13)
+   - ~~author + keyword 유니크 제약~~
+
+4. **UserEntity** (tb_user)
+   - 사용자 정보 저장 (신규 추가)
+   - 댓글과의 관계 매핑
 
 ### 🔒 보안 요구사항
 
@@ -156,7 +168,7 @@
 
 - ✅ **게시판 시스템**: 작성, 조회, 수정, 삭제 완료
 - ✅ **댓글 시스템**: 댓글, 대댓글 계층형 구조 완료
-- ✅ **알림 시스템**: 키워드 기반 알림 처리 완료
+- ✅ **알림 시스템**: 일반 알림 처리 완료 (Slack, Sentry, Email)
 - ✅ **스케줄링**: Cron 기반 배치 작업 완료
 - ✅ **자동화 시스템**: 응답 검증/변환 완료
 - ✅ **Docker 환경**: 완전한 컨테이너화 완료

@@ -96,40 +96,60 @@ graph TB
 
 ### Docker Compose 구성
 
+#### 1. **Core 서비스** (`docker-compose.yml`)
+
 ```yaml
-# 현재 Docker 구성
+# 메인 Core 서비스 그룹
+name: toy-project
+
 services:
-  gateway: # 컨테이너명: gateway
+  gateway: # API Gateway
     ports: ['3000:3000']
 
-  board: # 컨테이너명: board
+  board: # 게시판 서비스
     ports: ['3001:3001']
 
-  notification: # 컨테이너명: notification
-    ports: ['3002:3002']
+  account: # 계정 관리
+    ports: ['3005:3005']
 
-  scheduler: # 컨테이너명: scheduler
+  file: # 파일 관리
+    ports: ['3006:3006']
+```
+
+#### 2. **별도 서비스** (독립 운영)
+
+```yaml
+# Notification 서비스 (docker-compose.notification.yml)
+name: toy-project-notification
+services:
+  notification:
+    ports: ['3002:3002']  # ⚠️ 포트 충돌 수정 필요
+
+# Scheduler 서비스 (docker-compose.scheduler.yml)
+name: toy-project-scheduler
+services:
+  scheduler:
     ports: ['3004:3004']
 ```
 
-**주요 특징:**
+**구성 특징:**
 
-- ✅ **간소화된 컨테이너명**: `gateway`, `board`, `notification`, `scheduler`
-- ✅ **프로젝트명**: `toy-project`
-- ✅ **포트 매핑**: 호스트와 컨테이너 동일 포트 사용
+- ✅ **Core vs 별도 분리**: notification, scheduler는 독립 CI/CD
+- ✅ **간소화된 컨테이너명**: 서비스명과 동일
+- ✅ **프로젝트명 그룹핑**: `toy-project`, `toy-project-notification`, `toy-project-scheduler`
 - ✅ **공통 환경변수**: `x-common-env` 앵커 패턴 활용
-- ✅ **최적화**: MySQL/Redis 제거 (외부 서비스 사용)
+- ⚠️ **포트 정리 필요**: notification 포트 충돌 (3002 vs 3005)
 
 ## 📊 포트 및 통신 구조
 
-| 서비스           | 포트 | 컨테이너명     | 통신 방식 | 주요 기능               |
-| ---------------- | ---- | -------------- | --------- | ----------------------- |
-| **Gateway**      | 3000 | `gateway`      | HTTP      | API Gateway, Swagger    |
-| **Board**        | 3001 | `board`        | TCP       | 게시판 CRUD, 댓글 관리  |
-| **Notification** | 3002 | `notification` | TCP       | 키워드 알림, Queue 처리 |
-| **Scheduler**    | 3004 | `scheduler`    | TCP       | 스케줄링, Cron 작업     |
-| **Account**      | 3005 | `account`      | TCP       | 계정 관리, 사용자 인증  |
-| **File**         | 3006 | `file`         | TCP       | 파일 업로드/다운로드    |
+| 서비스           | 포트 | 컨테이너명     | Docker 구성 | 통신 방식 | 주요 기능              |
+| ---------------- | ---- | -------------- | ----------- | --------- | ---------------------- |
+| **Gateway**      | 3000 | `gateway`      | 🔵 Core     | HTTP      | API Gateway, Swagger   |
+| **Board**        | 3001 | `board`        | 🔵 Core     | TCP       | 게시판 CRUD, 댓글 관리 |
+| **Notification** | 3002 | `notification` | 🟡 별도     | TCP       | 일반 알림, Queue 처리  |
+| **Scheduler**    | 3004 | `scheduler`    | 🟡 별도     | TCP       | 스케줄링, Cron 작업    |
+| **Account**      | 3005 | `account`      | 🔵 Core     | TCP       | 계정 관리, 사용자 인증 |
+| **File**         | 3006 | `file`         | 🔵 Core     | TCP       | 파일 업로드/다운로드   |
 
 **통신 플로우:**
 
@@ -177,7 +197,7 @@ apps/gateway/src/
 
 - **TCP 마이크로서비스**: NestJS 마이크로서비스
 - **데이터베이스**: TypeORM + MySQL
-- **캐시**: Redis (키워드 알림 트리거)
+- **캐시**: Redis (알림 시스템 연결)
 - **검증**: ValidationPipe 전역 적용
 
 **구성요소**:
@@ -195,20 +215,20 @@ apps/board/src/
 - 게시글 CRUD operations
 - 댓글 및 대댓글 관리 (계층형 구조)
 - 비밀번호 검증 (bcrypt)
-- 키워드 알림 트리거
+- 일반 알림 처리
 - 페이징 및 검색 기능
 - 자동 응답 변환 (`@CheckResponseWithType`)
 
 ### 3. Notification Service (:3002)
 
-**역할**: 키워드 기반 알림 처리
+**역할**: 일반 알림 처리 (Slack, Sentry, Email)
 
 **기술 구성**:
 
 - **TCP 마이크로서비스**: NestJS 마이크로서비스
 - **백그라운드 처리**: Redis Bull Queue
-- **알림 엔진**: 키워드 매칭 알고리즘
-- **데이터베이스**: TypeORM + MySQL
+- **알림 채널**: Slack, Sentry, Email 지원
+- **데이터베이스**: TypeORM + MySQL (미사용)
 
 **구성요소**:
 
@@ -223,11 +243,11 @@ apps/notification/src/
 
 **주요 기능**:
 
-- 키워드 매칭 엔진
+- Slack 메시지 전송
+- Sentry 에러 리포팅
+- Email 알림 발송
 - 비동기 알림 처리 (Bull Queue)
-- 알림 이력 관리
-- 중복 알림 방지
-- 실시간 키워드 감지
+- 알림 성공/실패 처리
 
 ### 4. Scheduler Service (:3004)
 
@@ -521,25 +541,24 @@ graph TD
 **현재 구성 특징**:
 
 ```yaml
-# docker-compose.yml
+# 🔵 Core 서비스 (docker-compose.yml)
 name: toy-project
-
 services:
-  gateway:
-    container_name: gateway
-    ports: ['3000:3000']
+  gateway:    ports: ['3000:3000']
+  board:      ports: ['3001:3001']
+  account:    ports: ['3005:3005']
+  file:       ports: ['3006:3006']
 
-  board:
-    container_name: board
-    ports: ['3001:3001']
+# 🟡 별도 서비스들
+# docker-compose.notification.yml
+name: toy-project-notification
+services:
+  notification: ports: ['3002:3002']
 
-  notification:
-    container_name: notification
-    ports: ['3002:3002']
-
-  scheduler:
-    container_name: scheduler
-    ports: ['3004:3004']
+# docker-compose.scheduler.yml
+name: toy-project-scheduler
+services:
+  scheduler: ports: ['3004:3004']
 ```
 
 **최적화 포인트**:
@@ -764,15 +783,43 @@ apps/{servicename}/src/
 새 서비스 추가 시 Mermaid 다이어그램에 추가:
 
 ```mermaid
-subgraph "Business Logic Layer"
-    Board[Board Service :3001]
-    Notification[Notification Service :3002]
-    Scheduler[Scheduler Service :3004]
-    NewService[New Service :3005]  # 새 서비스 추가
-end
+graph TB
+    subgraph "API Gateway Layer"
+        Gateway[Gateway Service :3000]
+    end
 
-Gateway --> NewService  # 연결 추가
+    subgraph "Business Logic Layer"
+        Board[Board Service :3001]
+        Notification[Notification Service :3002]
+        Scheduler[Scheduler Service :3004]
+        Account[Account Service :3005]
+        File[File Service :3006]
+        NewService[New Service :3007]
+    end
+
+    Gateway --> Board
+    Gateway --> Notification
+    Gateway --> Scheduler
+    Gateway --> Account
+    Gateway --> File
+    Gateway --> NewService
 ```
+
+### 새 서비스 포트 할당 가이드
+
+**포트 할당 규칙**:
+
+| 서비스           | 포트 | 컨테이너명     | 상태         |
+| ---------------- | ---- | -------------- | ------------ |
+| **Gateway**      | 3000 | `gateway`      | ✅ 운영 중   |
+| **Board**        | 3001 | `board`        | ✅ 운영 중   |
+| **Notification** | 3002 | `notification` | ✅ 운영 중   |
+| **Scheduler**    | 3004 | `scheduler`    | ✅ 운영 중   |
+| **Account**      | 3005 | `account`      | ✅ 구조 완료 |
+| **File**         | 3006 | `file`         | ✅ 구조 완료 |
+| **NewService**   | 3007 | `newservice`   | 📋 예시 패턴 |
+
+**포트 할당 패턴**: 300X (X는 서비스 순번)
 
 ### 서비스 간 통신 패턴
 
@@ -790,6 +837,173 @@ Gateway --> NewService  # 연결 추가
 - `libs/core` - 설정 및 예외 처리
 - `libs/database` - Entity 및 Repository
 - `libs/global-dto` - 공통 DTO
+
+## 📦 개발 환경 및 빌드 시스템
+
+### 패키지 관리 (pnpm v8)
+
+#### 핵심 특징
+
+- **성능**: npm/yarn 대비 2-3배 빠른 설치 속도
+- **디스크 효율성**: 심볼릭 링크를 통한 중복 제거
+- **모노레포 지원**: 워크스페이스 최적화
+- **보안**: Phantom Dependencies 방지
+
+#### 주요 의존성
+
+**프로덕션 의존성**:
+
+```json
+{
+  "@nestjs/common": "^11.0.0",
+  "@nestjs/core": "^11.0.0",
+  "@nestjs/microservices": "^11.0.21",
+  "typeorm": "^0.3.22",
+  "mysql2": "^3.11.0",
+  "class-transformer": "^0.5.1",
+  "class-validator": "^0.14.1",
+  "bcrypt": "^5.1.1",
+  "express": "^5.1.0"
+}
+```
+
+**개발 의존성**:
+
+```json
+{
+  "@nestjs/cli": "^11.0.0",
+  "typescript": "^5.1.3",
+  "jest": "^29.5.0",
+  "eslint": "^8.42.0",
+  "prettier": "^3.0.0"
+}
+```
+
+#### TypeScript 경로 별칭
+
+```json
+{
+  "paths": {
+    "@app/common": ["libs/common/src"],
+    "@app/core": ["libs/core/src"],
+    "@app/database": ["libs/database/src"],
+    "@app/global-dto": ["libs/global-dto/src"],
+    "@app/utility": ["libs/utility/src"],
+    "@app/proxy": ["libs/proxy/src"]
+  }
+}
+```
+
+#### 패키지 관리 명령어
+
+```bash
+# 의존성 설치
+pnpm install --frozen-lockfile
+
+# 패키지 추가
+pnpm add @nestjs/common@^11.0.0
+
+# 개발 의존성 추가
+pnpm add -D @types/node
+
+# 보안 감사
+pnpm audit --fix
+
+# 스토어 관리
+pnpm store prune
+```
+
+### 빌드 시스템 (SWC)
+
+#### 성능 향상
+
+- **컴파일 성능**: 15.6% 향상 (1710ms vs 2027ms)
+- **개발 서버**: 483ms 초고속 빌드
+- **호환성**: TypeScript 컴파일러와 100% 동일한 결과물
+
+#### SWC 설정 (.swcrc)
+
+```json
+{
+  "jsc": {
+    "parser": {
+      "syntax": "typescript",
+      "decorators": true,
+      "dynamicImport": true
+    },
+    "transform": {
+      "legacyDecorator": true,
+      "decoratorMetadata": true
+    },
+    "target": "es2021",
+    "keepClassNames": true
+  },
+  "module": {
+    "type": "commonjs"
+  },
+  "sourceMaps": true
+}
+```
+
+#### 빌드 명령어
+
+```bash
+# SWC 기반 개발 서버 (자동 적용)
+pnpm run start:dev:gateway      # Gateway 서비스
+pnpm run start:dev:board        # Board 서비스
+pnpm run start:dev:notification # Notification 서비스
+pnpm run start:dev:scheduler    # Scheduler 서비스
+pnpm run start:dev:account      # Account 서비스
+pnpm run start:dev:file         # File 서비스
+
+# SWC 기반 프로덕션 빌드
+pnpm run build:all:swc          # 모든 앱 SWC 빌드 (권장)
+pnpm run build:swc gateway      # 개별 앱 SWC 빌드
+
+# 기존 방식 (호환성)
+pnpm run build:all              # 모든 앱 기존 빌드
+```
+
+#### 장점
+
+- **NestJS 완벽 지원**: 데코레이터 메타데이터, TypeORM 엔티티 정상 작동
+- **안정성**: 검증된 설정으로 롤백 지원
+- **CI/CD 최적화**: 대규모 프로젝트에서 더 큰 성능 향상
+
+### 테스트 환경
+
+#### Jest 설정
+
+```bash
+# 전체 테스트
+pnpm test
+
+# 특정 앱 테스트
+pnpm test apps/board
+
+# 커버리지 포함 테스트
+pnpm test:cov
+
+# E2E 테스트
+pnpm test:e2e
+```
+
+#### 코드 품질
+
+```bash
+# 코드 포매팅
+pnpm run format
+
+# 린팅
+pnpm run lint
+```
+
+### 성능 최적화 팁
+
+- **pnpm 캐시 활용**: `~/.pnpm-store` 글로벌 저장소
+- **병렬 개발**: 여러 서비스 동시 개발 서버 실행
+- **SWC 캐시**: 증분 빌드로 개발 생산성 향상
+- **TypeScript 경로 별칭**: 깔끔한 import 구조
 
 ---
 

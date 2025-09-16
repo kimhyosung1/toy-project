@@ -24,10 +24,10 @@
 
 ### 🚀 개발 가이드
 
-- **[패키지 관리](./ssot/05_Package_Management.md)** - pnpm 및 의존성 관리
-- **[SWC 빌드 시스템](./ssot/06_SWC_Build_System.md)** - 고성능 빌드 설정
-- **[Docker 구성](./ssot/07_Docker_Configuration.md)** - 컨테이너화 및 배포
-- **[Database Management](./ssot/08_Database_Management.md)** - 자동화된 DB 동기화
+- **[Docker 구성](./ssot/05_Docker_Configuration.md)** - 컨테이너화 및 배포
+- **[Database Management](./ssot/06_Database_Management.md)** - 자동화된 DB 동기화
+
+> **📦 패키지 관리 및 빌드**: [시스템 아키텍처](./ssot/02_System_Architecture.md)의 "개발 환경 및 빌드 시스템" 섹션 참조
 
 ## 🎯 프로젝트 개요
 
@@ -41,7 +41,7 @@
 - **📊 Enhanced DB Sync System**: 완전 자동화된 Entity/Repository 생성
 - **🎯 프로덕션 레디**: 기능만 추가하면 바로 운영 환경 배포 가능
 
-### 현재 운영 중인 마이크로서비스
+### 현재 운영 중인 마이크로서비스 (6개)
 
 | 서비스           | 포트 | 역할                             | 상태    |
 | ---------------- | ---- | -------------------------------- | ------- |
@@ -49,6 +49,8 @@
 | **Board**        | 3001 | 게시글/댓글 CRUD                 | ✅ 운영 |
 | **Notification** | 3002 | 알림 처리 (Slack, Sentry, Email) | ✅ 운영 |
 | **Scheduler**    | 3004 | 스케줄링, Cron 작업              | ✅ 운영 |
+| **Account**      | 3005 | 계정 관리, 사용자 인증           | ✅ 운영 |
+| **File**         | 3006 | 파일 업로드/다운로드, 파일 관리  | ✅ 운영 |
 
 > **참고**: 게시판 기능은 스켈레톤 프로젝트의 **예시 구현**입니다. 실제 프로젝트에서는 필요한 기능으로 대체하여 사용하세요.
 
@@ -85,6 +87,8 @@ pnpm run start:dev:gateway      # 터미널 1
 pnpm run start:dev:board        # 터미널 2
 pnpm run start:dev:notification # 터미널 3
 pnpm run start:dev:scheduler    # 터미널 4
+pnpm run start:dev:account      # 터미널 5
+pnpm run start:dev:file         # 터미널 6
 ```
 
 ### 서비스 확인
@@ -123,6 +127,8 @@ pnpm run start:dev:gateway      # Gateway 서비스
 pnpm run start:dev:board        # Board 서비스
 pnpm run start:dev:notification # Notification 서비스
 pnpm run start:dev:scheduler    # Scheduler 서비스
+pnpm run start:dev:account      # Account 서비스
+pnpm run start:dev:file         # File 서비스
 ```
 
 ### 빌드
@@ -168,7 +174,7 @@ pnpm test:cov                   # 커버리지 테스트
 - `POST /boards/:id/comments` - 댓글/대댓글 작성
 - `GET /boards/:id/comments` - 댓글 목록 조회 (계층형)
 
-> 📖 **상세한 API 명세**: [API 인터페이스 문서](./ssot/05_API_Interface.md) 참조
+> 📖 **상세한 API 명세**: [API 인터페이스 문서](./ssot/04_API_Interface.md) 참조
 
 ## 🔧 주요 기능
 
@@ -234,7 +240,7 @@ async createBoard(@Payload() input: CreateBoardRequest): Promise<CreateBoardResp
 - **완전한 가이드**: [SSOT 폴더](./ssot/) - 모든 상세 문서
 - **아키텍처**: [시스템 아키텍처](./ssot/02_System_Architecture.md)
 - **API 가이드**: [API 인터페이스](./ssot/04_API_Interface.md)
-- **Docker 가이드**: [Docker 구성](./ssot/07_Docker_Configuration.md)
+- **Docker 가이드**: [Docker 구성](./ssot/05_Docker_Configuration.md)
 
 ### 개발 지원
 
@@ -256,7 +262,7 @@ SSOT 문서(ssot/ 폴더)를 참고하여 현재 아키텍처에 맞게 답변�
 - 아키텍처 질문 → `02_System_Architecture.md`
 - API 관련 → `04_API_Interface.md`
 - 데이터베이스 → `03_Database_Schema.md`
-- Docker 관련 → `07_Docker_Configuration.md`
+- Docker 관련 → `05_Docker_Configuration.md`
 
 ---
 

@@ -2,6 +2,8 @@
 
 **NestJS v11 기반 마이크로서비스 아키텍처 스켈레톤 프로젝트**
 
+> 🤖 **AI 개발자 참고**: 코드 변경 시 아래 AI 작업 가이드를 반드시 따라 문서 일치율 95% 이상을 유지하세요!
+
 ## 📋 프로젝트 핵심 정보
 
 ### 기본 정보
@@ -144,10 +146,10 @@ pnpm run start:dev:file         # 터미널 6
 
 ### 🚀 개발 및 배포
 
-- **[05_Package_Management.md](./05_Package_Management.md)** - pnpm 및 의존성 관리
-- **[06_SWC_Build_System.md](./06_SWC_Build_System.md)** - 고성능 빌드 설정
 - **[07_Docker_Configuration.md](./07_Docker_Configuration.md)** - 컨테이너화 및 배포 가이드
 - **[08_Database_Management.md](./08_Database_Management.md)** - 자동화된 DB 동기화 시스템
+
+> **📦 패키지 관리 및 빌드 시스템**: [02_System_Architecture.md](./02_System_Architecture.md)의 "개발 환경 및 빌드 시스템" 섹션 참조
 
 ## 🔧 주요 기능
 
@@ -250,6 +252,76 @@ pnpm test:cov                   # 커버리지 테스트
 - **✅ 스케줄링**: Cron 기반 배치 작업
 - **✅ 계정 관리**: 사용자 인증 및 계정 관리
 - **✅ 파일 관리**: 파일 업로드/다운로드 시스템
+
+## 🤖 AI 개발자 작업 가이드
+
+### 핵심 원칙
+
+> **모든 코드 변경 후 SSOT 문서와의 일치율이 95% 이상이 되도록 자동으로 문서를 업데이트해야 합니다.**
+
+### 🚀 즉시 사용 가능한 프롬프트
+
+#### 1. 전체 일치율 확인 (개발 완료 후 필수)
+
+```
+ssot 현재 구현되어있는 코드랑 모든 SSOT 문서들의 일치율이 95%이상인지 확인하고, 부족한 문서들은 자동으로 업데이트해줘
+```
+
+#### 2. 새 서비스 추가 후 문서 동기화
+
+```
+ssot [서비스명] 서비스를 포트 [포트번호]로 추가했습니다. 관련 SSOT 문서들을 실제 구현에 맞게 업데이트하여 일치율 95% 이상을 달성해주세요.
+```
+
+#### 3. 새 테이블/Entity 추가 후 문서 동기화
+
+```
+ssot [테이블명/Entity명]을 추가했습니다. Database Schema 문서와 관련 SSOT 문서들을 실제 구현에 맞게 업데이트해주세요.
+```
+
+#### 4. 새 API 엔드포인트 추가 후 문서 동기화
+
+```
+ssot [HTTP_METHOD] [엔드포인트] API를 추가했습니다. API Interface 문서를 업데이트하고 관련 SSOT 문서들의 일치율을 95% 이상으로 맞춰주세요.
+```
+
+#### 5. 기능 제거/Deprecated 처리
+
+```
+ssot [기능명/테이블명]을 제거했습니다. 모든 SSOT 문서에서 해당 내용을 @deprecated 처리하거나 제거하여 실제 구현과 일치시켜주세요.
+```
+
+### 📋 SSOT 문서 업데이트 대상
+
+| 변경 유형                | 업데이트 대상 문서                                                          |
+| ------------------------ | --------------------------------------------------------------------------- |
+| **새 서비스 추가**       | `00_MASTER_OVERVIEW.md`, `02_System_Architecture.md`, `04_API_Interface.md` |
+| **새 Entity/Table 추가** | `03_Database_Schema.md`, `00_MASTER_OVERVIEW.md`                            |
+| **새 API 엔드포인트**    | `04_API_Interface.md`, `02_System_Architecture.md`                          |
+| **Docker 설정 변경**     | `02_System_Architecture.md`, `05_Docker_Configuration.md`                   |
+| **기능 추가/제거**       | `01_PRD.md`, `00_MASTER_OVERVIEW.md`                                        |
+| **빌드/패키지 변경**     | `02_System_Architecture.md` (개발 환경 섹션)                                |
+| **DB 구조 변경**         | `03_Database_Schema.md`, `06_Database_Management.md`                        |
+
+### ⚠️ 필수 검증 사항
+
+**작업 완료 후 반드시 확인**:
+
+- [ ] 변경된 코드가 모든 관련 SSOT 문서에 반영되었는가?
+- [ ] 새로운 기능이 적절한 문서 섹션에 추가되었는가?
+- [ ] Deprecated된 기능이 올바르게 표시되었는가?
+- [ ] 모든 SSOT 문서의 일치율이 95% 이상인가?
+- [ ] 문서 간 일관성이 유지되고 있는가?
+
+### 💡 95% 일치율 달성 기준
+
+- **구조 일치**: 실제 폴더/파일 구조와 100% 일치
+- **기능 일치**: 구현된 기능만 문서화, 미구현 기능 제외
+- **상태 정확성**: 활성/비활성/Deprecated 상태 정확히 반영
+- **관계 일치**: Entity 관계, 서비스 간 통신 등 정확히 반영
+- **설정 일치**: 포트, 환경변수, Docker 설정 등 정확히 반영
+
+> **🤖 AI 개발자 핵심 원칙**: Single Source of Truth 원칙 준수가 프로젝트 품질의 핵심입니다!
 
 ---
 

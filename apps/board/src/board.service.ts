@@ -50,7 +50,7 @@ export class BoardService {
         entityManager,
       );
 
-      // 👈 인터셉터가 자동으로 CreateBoardResponse로 변환/검증함
+      // 👈 인터셉터가 자동으로 CreateBoardResponse로 변환/검증함.
       return savedBoard;
     });
   }
@@ -64,11 +64,13 @@ export class BoardService {
       input.author,
     );
 
-    // 👈 인터셉터가 자동으로 SelectBoardResponse로 변환/검증함
-    return {
+    const res = {
       boards: boards,
       totalCount: total,
     };
+
+    // 👈 인터셉터가 자동으로 SelectBoardResponse로 변환/검증함
+    return res;
   }
 
   // 게시글 수정 - 비밀번호 확인 후 트랜잭션 사용
