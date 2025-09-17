@@ -12,22 +12,19 @@
 
 ## 📚 완전한 기술 문서 (SSOT)
 
-> 🎯 **시작하기**: [SSOT 마스터 개요](./ssot/00_MASTER_OVERVIEW.md)에서 전체 시스템을 한눈에 파악하세요.
+> 🎯 **시작하기**: [SSOT 완전 가이드](./ssot/00_COMPLETE_GUIDE.md)에서 모든 정보를 한번에 확인하세요!
 
 ### 📋 핵심 문서
 
-- **[마스터 개요](./ssot/00_MASTER_OVERVIEW.md)** - 전체 시스템 한눈에 보기 ⭐
-- **[프로젝트 요구사항](./ssot/01_PRD.md)** - 기능 명세 및 사용자 스토리
-- **[시스템 아키텍처](./ssot/02_System_Architecture.md)** - 마이크로서비스 구조
-- **[데이터베이스 스키마](./ssot/03_Database_Schema.md)** - 테이블 구조 및 관계도
-- **[API 인터페이스](./ssot/04_API_Interface.md)** - REST API 명세서
+- **[00_COMPLETE_GUIDE.md](./ssot/00_COMPLETE_GUIDE.md)** - 🚀 **모든 정보 통합 가이드 (완전 통합)** ⭐
+- **[01_UPDATE_GUIDE.md](./ssot/01_UPDATE_GUIDE.md)** - 🔄 **SSOT 갱신 가이드 (AI용)**
 
-### 🚀 개발 가이드
+### 🚀 운영 문서
 
-- **[Docker 구성](./ssot/05_Docker_Configuration.md)** - 컨테이너화 및 배포
-- **[Database Management](./ssot/06_Database_Management.md)** - 자동화된 DB 동기화
+- **[operations/CI-CD/](./ssot/operations/CI-CD/)** - CI/CD 및 Docker 설정
+- **[operations/database/](./ssot/operations/database/)** - DB 관리 및 자동화
 
-> **📦 패키지 관리 및 빌드**: [시스템 아키텍처](./ssot/02_System_Architecture.md)의 "개발 환경 및 빌드 시스템" 섹션 참조
+> **📦 패키지 관리 및 빌드**: [완전 가이드](./ssot/00_COMPLETE_GUIDE.md)의 "개발 환경 구성" 섹션 참조
 
 ## 🎯 프로젝트 개요
 
@@ -174,7 +171,7 @@ pnpm test:cov                   # 커버리지 테스트
 - `POST /boards/:id/comments` - 댓글/대댓글 작성
 - `GET /boards/:id/comments` - 댓글 목록 조회 (계층형)
 
-> 📖 **상세한 API 명세**: [API 인터페이스 문서](./ssot/04_API_Interface.md) 참조
+> 📖 **상세한 API 명세**: [완전 가이드](./ssot/00_COMPLETE_GUIDE.md)의 "API 명세" 섹션 참조
 
 ## 🔧 주요 기능
 
@@ -237,10 +234,10 @@ async createBoard(@Payload() input: CreateBoardRequest): Promise<CreateBoardResp
 
 ### 기술 문서
 
-- **완전한 가이드**: [SSOT 폴더](./ssot/) - 모든 상세 문서
-- **아키텍처**: [시스템 아키텍처](./ssot/02_System_Architecture.md)
-- **API 가이드**: [API 인터페이스](./ssot/04_API_Interface.md)
-- **Docker 가이드**: [Docker 구성](./ssot/05_Docker_Configuration.md)
+- **완전한 가이드**: [SSOT 완전 가이드](./ssot/00_COMPLETE_GUIDE.md) - 모든 정보 통합
+- **아키텍처**: [완전 가이드](./ssot/00_COMPLETE_GUIDE.md) - 마이크로서비스 구조
+- **API 가이드**: [완전 가이드](./ssot/00_COMPLETE_GUIDE.md) - API 명세서
+- **CI/CD 가이드**: [CI/CD 설정](./ssot/operations/CI-CD/configuration.md)
 
 ### 개발 지원
 
@@ -254,18 +251,18 @@ async createBoard(@Payload() input: CreateBoardRequest): Promise<CreateBoardResp
 
 ```
 이 NestJS 마이크로서비스 프로젝트에서 [질문 내용]을 하고 싶습니다.
-SSOT 문서(ssot/ 폴더)를 참고하여 현재 아키텍처에 맞게 답변해주세요.
+SSOT 문서(ssot/00_COMPLETE_GUIDE.md)를 참고하여 현재 아키텍처에 맞게 답변해주세요.
 ```
 
 **참고할 핵심 문서**:
 
-- 아키텍처 질문 → `02_System_Architecture.md`
-- API 관련 → `04_API_Interface.md`
-- 데이터베이스 → `03_Database_Schema.md`
-- Docker 관련 → `05_Docker_Configuration.md`
+- 모든 질문 → `00_COMPLETE_GUIDE.md` (통합 가이드)
+- 갱신 질문 → `01_UPDATE_GUIDE.md` (AI용 갱신 가이드)
+- CI/CD 관련 → `operations/CI-CD/configuration.md`
+- 데이터베이스 → `operations/database/management.md` & `schema.md`
 
 ---
 
 **Made with ❤️ using NestJS v11, Node.js v22, Docker, and pnpm v8**
 
-> 📚 **더 자세한 정보**: [SSOT 문서 폴더](./ssot/)에서 전체 프로젝트 문서를 확인하세요.
+> 📚 **더 자세한 정보**: [SSOT 완전 가이드](./ssot/00_COMPLETE_GUIDE.md)에서 전체 프로젝트 문서를 확인하세요.

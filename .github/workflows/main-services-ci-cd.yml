@@ -30,12 +30,13 @@ jobs:
       - name: 🔍 Detect Changed Apps
         id: detect-apps
         run: |
+          # 기본 정보 출력
           echo "🔍 ===== CI/CD Detection Started ====="
           echo "📅 Timestamp: $(date '+%Y-%m-%d %H:%M:%S UTC')"
           echo "🌿 Branch: ${{ github.ref_name }}"
           echo "📝 Event: ${{ github.event_name }}"
 
-          # 🚫 자동 커밋 스킵 체크
+          # 자동 커밋인지 확인 (ORM Generator 등의 자동 커밋 스킵)
           COMMIT_MSG=$(git log -1 --pretty=%B)
           echo "💬 Last commit message: $COMMIT_MSG"
 
@@ -46,26 +47,14 @@ jobs:
           fi
           echo "👤 Manual commit detected - PROCEEDING"
 
-          # 🔍 메인 서비스 앱 목록 생성
-          # 1. 별도 CI/CD 파일 스캔
-          # .github/workflows/notification-ci-cd.yml  → notification 제외
-          # .github/workflows/scheduler-ci-cd.yml     → scheduler 제외
-          # .github/workflows/main-services-ci-cd.yml → 제외 대상 아님
-
-          # # 2. apps 폴더 스캔 + 동적 제외
-          # apps/account/      ✅ 포함 (별도 CI/CD 없음)
-          # apps/board/        ✅ 포함 (별도 CI/CD 없음)  
-          # apps/file/         ✅ 포함 (별도 CI/CD 없음)
-          # apps/gateway/      ✅ 포함 (별도 CI/CD 없음)
-          # apps/notification/ ❌ 제외 (notification-ci-cd.yml 존재)
-          # apps/scheduler/    ❌ 제외 (scheduler-ci-cd.yml 존재)
+          # 메인 서비스에 포함될 앱 목록 생성 (notification, scheduler는 독립 CI/CD)
           echo ""
           echo "🔍 ===== Discovering Main Service Apps ====="
           MAIN_APPS=$(find apps -maxdepth 1 -type d -name "*" ! -name "apps" ! -name "notification" ! -name "scheduler" -exec basename {} \; | tr '\n' ',' | sed 's/,$//')
           echo "📱 Available main service apps: $MAIN_APPS"
           echo "❌ Excluded apps: notification, scheduler (separate CI/CD)"
 
-          # 📁 변경된 파일 목록 (안전한 방식)
+          # Git에서 변경된 파일 목록 가져오기
           echo ""
           echo "📁 ===== Analyzing Changed Files ====="
           if git rev-parse HEAD~1 >/dev/null 2>&1; then
@@ -88,7 +77,18 @@ jobs:
           echo "🎯 ===== App Change Detection ====="
           CHANGED_APPS=""
 
-          # 핵심 파일 변경 시 전체 빌드 (우선 체크)
+          # 1. 문서만 변경되었는지 확인 (ssot/, README.md만 변경시 빌드 스킵)
+          DOC_ONLY_FILES=$(echo "$CHANGED_FILES" | grep -vE "(^|/)ssot/|README\.md$" || true)
+          if [ -z "$DOC_ONLY_FILES" ]; then
+            echo "📄 Documentation-only changes detected - SKIPPING BUILD"
+            echo "Changed files are only:"
+            echo "$CHANGED_FILES"
+            echo "skip_build=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          echo "📱 Non-documentation changes detected - proceeding with build analysis"
+
+          # 2. 핵심 파일 변경시 모든 앱 빌드 (libs, package.json 등)
           CORE_FILES=$(echo "$CHANGED_FILES" | grep -E "^(libs/|package\.json|pnpm-lock\.yaml|tsconfig|nest-cli\.json)" || true)
           if [ -n "$CORE_FILES" ]; then
             echo "🔄 Core files changed - FULL BUILD required:"
@@ -96,8 +96,8 @@ jobs:
             CHANGED_APPS="$MAIN_APPS"
             echo "✅ Building all apps: $CHANGED_APPS"
           else
+            # 3. 개별 앱 변경 확인하여 선별 빌드
             echo "📱 Checking individual app changes..."
-            # 개별 앱 변경 체크
             for app in ${MAIN_APPS//,/ }; do
               APP_FILES=$(echo "$CHANGED_FILES" | grep "^apps/$app/" || true)
               if [ -n "$APP_FILES" ]; then
@@ -108,7 +108,7 @@ jobs:
               fi
             done
             
-            # 변경된 앱이 없으면 전체 빌드 (안전장치)
+            # 4. 안전장치: 변경된 앱이 없으면 전체 빌드
             if [ -z "$CHANGED_APPS" ]; then
               echo "⚠️  No specific apps detected - FALLBACK to full build"
               CHANGED_APPS="$MAIN_APPS"

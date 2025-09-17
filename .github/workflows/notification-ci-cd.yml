@@ -20,8 +20,36 @@ jobs:
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # 전체 히스토리 가져오기 (변경 감지용)
+
+      - name: 🔍 Check Documentation-only Changes
+        id: check-docs
+        run: |
+          echo "🔍 ===== Documentation Change Detection ====="
+
+          # Git에서 변경된 파일 목록 가져오기
+          if git rev-parse HEAD~1 >/dev/null 2>&1; then
+            CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
+          else
+            CHANGED_FILES=$(git ls-files)
+          fi
+
+          echo "📄 Changed files:"
+          echo "$CHANGED_FILES"
+
+          # 문서만 변경되었는지 확인 (ssot/, README.md만 변경시 빌드 스킵)
+          DOC_ONLY_FILES=$(echo "$CHANGED_FILES" | grep -vE "(^|/)ssot/|README\.md$" || true)
+          if [ -z "$DOC_ONLY_FILES" ]; then
+            echo "📄 Documentation-only changes detected - SKIPPING BUILD"
+            echo "skip_build=true" >> $GITHUB_OUTPUT
+          else
+            echo "📱 Code changes detected - proceeding with build"
+            echo "skip_build=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: 🔐 Login to Container Registry
+        if: steps.check-docs.outputs.skip_build != 'true' # 문서 전용 변경시 스킵
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -29,23 +57,25 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 📝 Extract metadata
+        if: steps.check-docs.outputs.skip_build != 'true' # 문서 전용 변경시 스킵
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=ref,event=branch
-            type=sha,prefix=${{ github.ref_name }}-
-            type=raw,value=latest,enable=${{ github.ref_name == 'production' }}
+            type=ref,event=branch                            # 브랜치명 태그
+            type=sha,prefix=${{ github.ref_name }}-          # 커밋 SHA 태그  
+            type=raw,value=latest,enable=${{ github.ref_name == 'production' }}  # 운영환경만 latest
 
       - name: 🏗️ Build and push Docker image
+        if: steps.check-docs.outputs.skip_build != 'true' # 문서 전용 변경시 스킵
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile.notification
+          file: ./Dockerfile.notification # 알림 서비스 전용 Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             NODE_ENV=${{ github.ref_name == 'production' && 'production' || github.ref_name }}
-            TARGET_APPS=notification
+            TARGET_APPS=notification                        # 알림 앱만 빌드
