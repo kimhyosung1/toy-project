@@ -14,7 +14,11 @@ module.exports = {
     '^@app/core(|/.*)$': '<rootDir>/libs/core/src/$1',
     '^@app/database(|/.*)$': '<rootDir>/libs/database/src/$1',
     '^@app/proxy(|/.*)$': '<rootDir>/libs/proxy/src/$1',
+    '^@app/utility(|/.*)$': '<rootDir>/libs/utility/src/$1',
+    '^@app/global-dto(|/.*)$': '<rootDir>/libs/global-dto/src/$1',
+    '^@app/notification(|/.*)$': '<rootDir>/libs/notification/src/$1',
+    '^@app/notification-client(|/.*)$':
+      '<rootDir>/libs/notification-client/src/$1',
     '^libs/(.*)$': '<rootDir>/libs/$1',
   },
-  setupFiles: ['<rootDir>/jest.setup.js'],
 };

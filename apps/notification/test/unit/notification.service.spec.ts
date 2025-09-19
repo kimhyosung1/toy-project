@@ -1,89 +1,57 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { getQueueToken } from '@nestjs/bull';
-import { RedisQueueName, SOURCE_TYPE } from '@app/common/constants';
-import { Logger } from '@nestjs/common';
-
-// Mock 서비스 정의 - 실제 구현에 의존하지 않음
-const mockNotificationService = {
-  healthCheck: jest.fn().mockReturnValue('i am alive!!'),
-  addKeywordMatchesQueue: jest.fn().mockResolvedValue(undefined),
-};
+import { NotificationService } from '../../src/notification.service';
+import { SlackService, SentryService } from '@app/notification';
 
 describe('NotificationService', () => {
-  let mockQueue;
-  let loggerSpy: jest.SpyInstance;
-  let errorSpy: jest.SpyInstance;
+  let service: NotificationService;
+
+  const mockSlackService = {
+    sendMessage: jest.fn().mockResolvedValue(true),
+    sendError: jest.fn().mockResolvedValue(true),
+    sendSuccess: jest.fn().mockResolvedValue(true),
+    sendWarning: jest.fn().mockResolvedValue(true),
+  };
+
+  const mockSentryService = {
+    reportError: jest.fn().mockResolvedValue(true),
+    reportMessage: jest.fn().mockResolvedValue(true),
+  };
 
   beforeEach(async () => {
-    // Mock Queue
-    mockQueue = {
-      add: jest.fn().mockResolvedValue({}),
-    };
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        {
+          provide: NotificationService,
+          useFactory: () =>
+            new NotificationService(
+              mockSlackService as any,
+              mockSentryService as any,
+            ),
+        },
+      ],
+    }).compile();
 
-    // 로그 스파이
-    loggerSpy = jest
-      .spyOn(Logger.prototype, 'log')
-      .mockImplementation(() => {});
-    errorSpy = jest
-      .spyOn(Logger.prototype, 'error')
-      .mockImplementation(() => {});
-  });
-
-  afterEach(() => {
+    service = module.get<NotificationService>(NotificationService);
     jest.clearAllMocks();
   });
 
-  describe('healthCheck', () => {
-    it('should return health status', () => {
-      expect(mockNotificationService.healthCheck()).toBe('i am alive!!');
-    });
+  it('서비스가 정의되어야 합니다', () => {
+    expect(service).toBeDefined();
   });
 
-  describe('addKeywordMatchesQueue', () => {
-    it('should add keyword match jobs to the queue', async () => {
-      // 준비
-      const sourceType = SOURCE_TYPE.BOARD;
-      const sourceId = 1;
-      const title = '테스트 게시글';
-      const content = '테스트 내용';
-      const timestamp = new Date().toISOString();
+  it('헬스 체크가 작동해야 합니다', () => {
+    const result = service.healthCheck();
+    expect(result).toHaveProperty('status', 'healthy');
+    expect(result).toHaveProperty('timestamp');
+  });
 
-      const keywordMatches = [
-        {
-          keyNotificationId: 1,
-          author: '사용자1',
-          keyword: '테스트',
-          createdAt: new Date(),
-        },
-        {
-          keyNotificationId: 2,
-          author: '사용자2',
-          keyword: '내용',
-          createdAt: new Date(),
-        },
-      ];
+  it('Slack 메시지를 전송할 수 있어야 합니다', async () => {
+    const result = await service.sendSlack('test');
+    expect(result.success).toBe(true);
+  });
 
-      // 실행
-      await mockNotificationService.addKeywordMatchesQueue(
-        sourceType,
-        sourceId,
-        title,
-        content,
-        keywordMatches,
-        timestamp,
-      );
-
-      // 검증
-      expect(
-        mockNotificationService.addKeywordMatchesQueue,
-      ).toHaveBeenCalledWith(
-        sourceType,
-        sourceId,
-        title,
-        content,
-        keywordMatches,
-        timestamp,
-      );
-    });
+  it('Sentry 에러를 리포팅할 수 있어야 합니다', async () => {
+    const result = await service.sendSentryError('error');
+    expect(result.success).toBe(true);
   });
 });
