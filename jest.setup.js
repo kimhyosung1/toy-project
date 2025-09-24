@@ -36,10 +36,17 @@ jest.mock('@nestjs/bull', () => {
       registerQueue: jest.fn().mockReturnValue({
         module: class DynamicModule {},
         providers: [],
+        exports: [],
       }),
       forRoot: jest.fn().mockReturnValue({
         module: class DynamicModule {},
         providers: [],
+        exports: [],
+      }),
+      forRootAsync: jest.fn().mockReturnValue({
+        module: class DynamicModule {},
+        providers: [],
+        exports: [],
       }),
     },
     InjectQueue: jest.fn().mockReturnValue(() => {}),

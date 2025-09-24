@@ -8,6 +8,7 @@ module.exports = {
   collectCoverageFrom: ['**/*.(t|j)s'],
   coverageDirectory: './coverage',
   testEnvironment: 'node',
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   roots: ['<rootDir>/apps/', '<rootDir>/libs/'],
   moduleNameMapper: {
     '^@app/common(|/.*)$': '<rootDir>/libs/common/src/$1',
