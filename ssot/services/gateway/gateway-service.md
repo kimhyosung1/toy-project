@@ -25,6 +25,14 @@ GET /health-check                   # Gateway 헬스체크
 GET /board/health-check             # Board Service 헬스체크
 GET /notification/health-check      # Notification Service 헬스체크
 GET /scheduler/health-check         # Scheduler Service 헬스체크
+GET /account/health-check           # Account Service 헬스체크
+
+# 계정 관리 (Account Service 프록시)
+GET /account/health-check           # Account Service 상태 확인
+POST /account/signup                # 회원가입 (이메일/비밀번호)
+POST /account/signin                # 로그인 (JWT 토큰 발급)
+GET /account/profile                # 사용자 정보 조회 (Bearer 토큰 필요)
+POST /account/validate-token        # JWT 토큰 검증 (내부 서비스용)
 ```
 
 ## 📊 데이터 모델

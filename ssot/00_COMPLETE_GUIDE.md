@@ -37,7 +37,7 @@ ssot database "새 테이블 추가"
 | **Board**        | 3001 | 게시판 CRUD, 댓글 시스템     | ✅   |
 | **Notification** | 3002 | Slack/Sentry 알림, 큐 처리   | ✅   |
 | **Scheduler**    | 3004 | CRON 스케줄링, 배치 작업     | ✅   |
-| **Account**      | 3005 | 사용자 관리, 인증            | ✅   |
+| **Account**      | 3005 | JWT 인증, 회원가입/로그인    | ✅   |
 | **File**         | 3006 | 파일 업로드/다운로드         | ✅   |
 
 ### 통신 패턴
@@ -127,6 +127,12 @@ DELETE /boards/:id              # 게시글 삭제
 POST /boards/:id/comments       # 댓글 작성
 GET /boards/:id/comments        # 댓글 목록
 
+# 계정 관리 API
+POST /account/signup            # 회원가입
+POST /account/signin            # 로그인 (JWT 토큰 발급)
+GET /account/profile            # 사용자 정보 조회 (인증 필요)
+POST /account/validate-token    # JWT 토큰 검증 (내부 서비스용)
+
 # 알림 API
 POST /notifications/slack       # Slack 메시지
 POST /notifications/error       # 에러 알림
@@ -155,6 +161,28 @@ interface CreateBoardResponse {
   author: string;
   createdAt: Date;
   // password는 자동 제외
+}
+
+// 회원가입 요청
+interface SignUpRequest {
+  name: string; // 2-50자
+  email: string; // 유효한 이메일 형식
+  password: string; // 8자 이상
+}
+
+// 로그인 응답
+interface SignInResponse {
+  user: {
+    userId: number;
+    name: string;
+    email: string;
+    role: string;
+  };
+  token: {
+    accessToken: string;
+    tokenType: 'Bearer';
+    expiresIn: number; // 3600 (1시간)
+  };
 }
 ```
 

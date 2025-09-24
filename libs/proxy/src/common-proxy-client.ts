@@ -111,6 +111,8 @@ export const CustomMessagePatterns = {
   CreateAccount: 'CreateAccount',
   UpdateAccount: 'UpdateAccount',
   DeleteAccount: 'DeleteAccount',
+  SignInAccount: 'SignInAccount',
+  ValidateToken: 'ValidateToken',
 
   // File
   UploadFile: 'UploadFile',

@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { JwtService } from '@nestjs/jwt';
 import { AccountService } from '../../src/account.service';
 import { DatabaseService } from '@app/database';
 
@@ -10,12 +11,21 @@ describe('AccountService', () => {
     getConnection: jest.fn(),
   };
 
+  const mockJwtService = {
+    signAsync: jest.fn(),
+    verifyAsync: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         {
           provide: AccountService,
-          useFactory: () => new AccountService(mockDatabaseService as any),
+          useFactory: () =>
+            new AccountService(
+              mockDatabaseService as any,
+              mockJwtService as any,
+            ),
         },
       ],
     }).compile();

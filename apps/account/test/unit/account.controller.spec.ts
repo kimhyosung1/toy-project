@@ -7,6 +7,9 @@ describe('AccountController', () => {
 
   const mockAccountService = {
     healthCheck: jest.fn().mockReturnValue('Account service is alive!!'),
+    signUp: jest.fn(),
+    signIn: jest.fn(),
+    validateToken: jest.fn(),
   };
 
   beforeEach(async () => {

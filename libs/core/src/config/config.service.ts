@@ -261,6 +261,15 @@ export class CustomConfigService {
     return this.configService.get<string>('SENTRY_DSN_DEV', '');
   }
 
+  // JWT Configuration
+  get jwtSecret(): string {
+    return this.configService.get<string>('JWT_SECRET', 'default-secret-key');
+  }
+
+  get jwtExpiresIn(): string {
+    return this.configService.get<string>('JWT_EXPIRES_IN', '1h');
+  }
+
   get sentryDSNProduction(): string {
     return this.configService.get<string>('SENTRY_DSN_PRODUCTION', '');
   }

@@ -528,20 +528,17 @@ export class ThirdPartyMockFactory {
 **모든 서비스는 다음을 테스트해야 함:**
 
 - [ ] **SP 호출 테스트**
-
   - [ ] 정상 파라미터로 SP 호출
   - [ ] SP 오류 시 예외 처리
   - [ ] SP 응답 데이터 변환
 
 - [ ] **써드파티 API 테스트**
-
   - [ ] 정상 API 호출
   - [ ] API 타임아웃 처리
   - [ ] API 오류 응답 처리
   - [ ] 재시도 로직 (필요시)
 
 - [ ] **데이터 변환 테스트**
-
   - [ ] 외부 → 내부 형식 변환
   - [ ] 내부 → 외부 형식 변환
   - [ ] 잘못된 데이터 처리
@@ -585,7 +582,6 @@ it('결제 처리가 성공해야 합니다', async () => {
 ### **AI가 테스트 코드를 생성할 때 반드시 확인할 것들**
 
 1. **✅ SP 기반 시스템인지 확인**
-
    - 코드에 `callStoredProcedure` 또는 DB 프로시저 호출이 있는가?
    - 비즈니스 로직이 앱 코드보다 DB에 더 많이 있는가?
 
@@ -609,7 +605,6 @@ it('결제 처리가 성공해야 합니다', async () => {
    ```
 
 3. **✅ Mock 전략 적용**
-
    - SP 호출은 항상 Mock
    - 외부 API 호출도 항상 Mock (단위/통합 테스트에서)
    - E2E에서만 실제 Sandbox API 사용
@@ -623,6 +618,87 @@ it('결제 처리가 성공해야 합니다', async () => {
 ---
 
 # 🏗️ 서비스별 개발 가이드
+
+## 📝 DTO 작성 필수 가이드
+
+### **🎯 Response DTO 필수 데코레이터**
+
+모든 Response DTO는 반드시 다음 데코레이터들을 포함해야 합니다:
+
+```typescript
+import { ApiProperty } from '@nestjs/swagger';
+import { Expose, Type } from 'class-transformer';
+
+export class ExampleResponseDto {
+  @ApiProperty({
+    description: '설명',
+    example: '예시값',
+  })
+  @Expose() // 🔴 필수: 응답 시 포함될 필드임을 명시
+  @Type(() => String) // 🔴 필수: SWC 사용으로 런타임 타입 정보 제공
+  name: string;
+
+  @ApiProperty({
+    description: '숫자 필드',
+    example: 123,
+  })
+  @Expose()
+  @Type(() => Number)
+  id: number;
+
+  @ApiProperty({
+    description: '날짜 필드',
+    example: '2023-12-01T10:30:00.000Z',
+  })
+  @Expose()
+  @Type(() => Date)
+  createdAt: Date;
+
+  @ApiProperty({
+    description: '중첩 객체',
+    type: () => OtherDto,
+  })
+  @Expose()
+  @Type(() => OtherDto)
+  nested: OtherDto;
+}
+```
+
+### **📋 데코레이터 사용 규칙**
+
+1. **@Type() 데코레이터**:
+   - 🔴 **필수**: SWC 컴파일러 사용으로 런타임 타입 정보가 손실됨
+   - ✅ `@Type(() => String)` - 문자열 필드
+   - ✅ `@Type(() => Number)` - 숫자 필드
+   - ✅ `@Type(() => Date)` - 날짜 필드
+   - ✅ `@Type(() => Boolean)` - boolean 필드
+   - ✅ `@Type(() => OtherDto)` - 중첩 DTO 필드
+
+2. **@Expose() 데코레이터**:
+   - 🔴 **필수**: 응답으로 내보낼 필드에 반드시 포함
+   - 🚫 **제외할 필드에는 사용 안함** (password 등)
+
+3. **Request DTO와의 차이**:
+   - **Request DTO**: `@Type()` + `@IsString()` 등 validation
+   - **Response DTO**: `@Type()` + `@Expose()` + `@ApiProperty()`
+
+### **❌ 잘못된 예시**
+
+```typescript
+// ❌ @Type() 없음 - SWC로 타입 정보 손실
+export class BadResponseDto {
+  @ApiProperty()
+  @Expose()
+  name: string; // 런타임에 타입 변환 실패!
+}
+
+// ❌ @Expose() 없음 - 응답에 포함되지 않을 수 있음
+export class BadResponseDto {
+  @ApiProperty()
+  @Type(() => String)
+  name: string; // 응답에서 누락될 수 있음!
+}
+```
 
 ## 서비스별 주요 키워드
 

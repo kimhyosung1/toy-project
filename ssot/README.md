@@ -19,7 +19,7 @@
 | Board        | 3001 | [board-service.md](./services/board/board-service.md)                      | 게시판 시스템 |
 | Notification | 3002 | [notification-service.md](./services/notification/notification-service.md) | 알림 시스템   |
 | Scheduler    | 3004 | [scheduler-service.md](./services/scheduler/scheduler-service.md)          | 스케줄링      |
-| Account      | 3005 | [account-service.md](./services/account/account-service.md)                | 계정 관리     |
+| Account      | 3005 | [account-service.md](./services/account/account-service.md)                | JWT 인증 시스템 |
 | File         | 3006 | [file-service.md](./services/file/file-service.md)                         | 파일 관리     |
 
 ### 🚀 운영 문서
