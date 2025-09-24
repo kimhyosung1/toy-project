@@ -2,7 +2,7 @@ name: 🔄 Branch-specific Database Sync
 
 on:
   push:
-    branches: [dev, qa, production]
+    branches: [qa, production]
   workflow_dispatch:
     inputs:
       environment:
