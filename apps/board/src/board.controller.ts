@@ -17,6 +17,7 @@ import {
 } from '@app/global-dto/board/response';
 import { CheckResponseWithType } from '@app/common/decorators/check-response.decorator';
 
+//
 @Controller('board')
 export class BoardController {
   constructor(private readonly boardService: BoardService) {}
