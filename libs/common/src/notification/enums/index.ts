@@ -8,7 +8,7 @@
 /**
  * 알림 타입
  */
-export enum NotificationType {
+export enum NotificationTypeEnum {
   SLACK = 'slack',
   EMAIL = 'email',
   SENTRY = 'sentry',
@@ -17,7 +17,7 @@ export enum NotificationType {
 /**
  * 알림 레벨 (공통)
  */
-export enum NotificationLevel {
+export enum NotificationLevelEnum {
   SUCCESS = 'success',
   WARNING = 'warning',
   ERROR = 'error',

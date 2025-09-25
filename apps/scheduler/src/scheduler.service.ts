@@ -10,7 +10,10 @@ import {
 import { BoardSchedulerService } from './board/board-scheduler.service';
 import { CustomConfigService } from '@app/core';
 import { CommonNotificationService } from '@app/common';
-import { NotificationLevel, SentryLevel } from '@app/common/notification/enums';
+import {
+  NotificationLevelEnum,
+  SentryLevel,
+} from '@app/common/notification/enums';
 
 @Injectable()
 export class SchedulerService {
@@ -34,7 +37,7 @@ export class SchedulerService {
       // 🌐 간단한 알림 전송 - sendAlert 내부에서 모든 예외 처리됨
       const notificationResult = await this.notification.sendNotifications({
         message: `🚨 스케줄러 작업 실패: testScheduler\n에러: ${error.message}`,
-        level: NotificationLevel.ERROR,
+        level: NotificationLevelEnum.ERROR,
         context: {
           scheduler: 'testScheduler',
           error: error.stack,
@@ -81,7 +84,7 @@ export class SchedulerService {
     // 🌐 간단한 알림 전송 - sendAlert 내부에서 모든 예외 처리됨
     const result = await this.notification.sendNotifications({
       message: '🕒 스케줄러 서비스가 정상 작동 중입니다.',
-      level: NotificationLevel.INFO,
+      level: NotificationLevelEnum.INFO,
       slack: { channel: '#scheduler-status', emoji: '🕒' },
     });
 

@@ -39,42 +39,13 @@ POST /account/validate-token        # JWT 토큰 검증 (내부 서비스용)
 
 ## 📊 데이터 모델
 
-```typescript
-// Gateway는 데이터를 직접 저장하지 않고 프록시 역할만 수행
-// 모든 데이터 요청을 해당 마이크로서비스로 전달
+### 프록시 구조
 
-// Gateway 모듈 구성 (2025.09.25 업데이트)
-@Module({
-  imports: [
-    CustomConfigModule,
-    UtilityModule,
-    StandardOnlyInterceptorModule, // 🎯 표준 응답 형태 변환
-    JwtModule.registerAsync({
-      imports: [CustomConfigModule],
-      inject: [CustomConfigService],
-      useFactory: (configService: CustomConfigService) => ({
-        secret: configService.jwtSecret,
-        signOptions: { expiresIn: configService.jwtExpiresIn },
-      }),
-    }),
-  ],
-  controllers: [
-    GatewayController,
-    BoardController,
-    AccountController,
-    HealthController,
-  ],
-  providers: [
-    TEST2_FACTORY,
-    BOARD_FACTORY,
-    NOTIFICATION_FACTORY,
-    SCHEDULER_FACTORY,
-    ACCOUNT_FACTORY,
-    CustomJwtAuthGuard,
-  ],
-})
-export class GatewayModule {}
-```
+- **CommonProxyClient 상속**: TCP 통신 기반 프록시 처리
+- **requestRedirect**: 마이크로서비스로 요청 전달 메서드
+- **TCP 클라이언트**: BOARD_FACTORY, ACCOUNT_FACTORY 등 서비스별 팩토리
+- **StandardOnlyInterceptorModule**: 표준 응답 형태 변환 (`{success, data}`)
+- **JWT 모듈**: CustomJwtAuthGuard와 연동된 인증 시스템
 
 ## 🔄 응답 변환 프로세스
 

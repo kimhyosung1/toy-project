@@ -45,20 +45,23 @@ POST /api/notifications/bulk          # 배치 알림 처리 (최대 500개)
 
 ## 🎯 주요 기능
 
-### Notification App
+### Notification App (간소화된 구조)
 
-- **Slack 알림**: 메시지 전송
-- **Sentry 리포팅**: 에러 추적
-- **Email 알림**: 예정 (현재 미구현)
-- **배치 처리**: 500개씩 처리
+- **SlackService**: webhook을 통한 Slack 메시지 전송 (`sendMessage`, `sendError`)
+- **SentryService**: Sentry SDK를 통한 에러 추적 (`reportError`)
+- **Email 알림**: 예정 (현재 미구현, success: true로 처리)
+- **배치 처리**: 500개씩 순차 처리, 성공/실패 카운트 반환
+- **간단한 응답**: `{success: boolean}` 형태로 통일
 
-### CommonNotificationService
+### CommonNotificationService (libs/common)
 
 - **HTTP 클라이언트**: Notification App으로 요청 전송
-- **자동 재시도**: 3회 재시도 (지수 백오프)
-- **배치 처리**: 500개씩 청킹
-- **완벽한 예외 처리**: 절대 throw하지 않음
-- **실패 알림**: 실패 시 긴급 Slack 알림
+- **자동 재시도**: 3회 재시도 (지수 백오프: 1초, 2초, 4초)
+- **배치 처리**: 500개씩 청킹하여 처리
+- **완벽한 예외 처리**: 절대 throw하지 않음, 모든 에러를 catch하여 응답으로 반환
+- **실패 알림**: 실패 시 #notification-failures 채널로 긴급 Slack 알림
+- **타임아웃**: 5초/요청
+- **구조화된 로깅**: 실패 데이터 저장 준비 (추후 DB 연동)
 
 ## 🔧 사용법
 

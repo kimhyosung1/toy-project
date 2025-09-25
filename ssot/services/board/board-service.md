@@ -52,17 +52,19 @@ BoardHealthCheck                    # 헬스체크
 
 ## 📊 데이터 모델
 
-```typescript
-// 게시글 Entity (tb_board)
-- boardId, title, content, author, password
-- createdAt, updatedAt
-- 관계: comments (1:N with TbCommentEntity)
+### 게시글 Entity (TbBoardEntity)
 
-// 댓글 Entity (tb_comment)
-- commentId, boardId, parentId, content, author, userId
-- createdAt
-- 관계: board (N:1), user (N:1), parent/children (계층형)
-```
+- **테이블**: `tb_board`
+- **주요 필드**: boardId, title, content, author, password
+- **인덱스**: idx_title (제목 검색용)
+- **관계**: comments (1:N with TbCommentEntity)
+
+### 댓글 Entity (TbCommentEntity)
+
+- **테이블**: `tb_comment`
+- **주요 필드**: commentId, boardId, parentId, content, author, userId
+- **인덱스**: idx_board_id, idx_parent_id, idx_user_id
+- **관계**: board (N:1), user (N:1), parent/children (계층형 댓글)
 
 ## 🔧 개발 명령어
 

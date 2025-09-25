@@ -1,7 +1,7 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { CustomConfigService } from '@app/core';
 import { SendNotificationsRequest, SendNotificationsResponse } from './model';
-import { NotificationLevel } from './enums';
+import { NotificationLevelEnum } from './enums';
 import { validate } from 'class-validator';
 
 /**

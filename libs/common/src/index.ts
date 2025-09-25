@@ -13,8 +13,8 @@ export * from './notification/notification-http.module';
 
 // 🔧 명시적 enum exports (타입 충돌 방지)
 export {
-  NotificationType as NotificationTypeEnum,
-  NotificationLevel as NotificationLevelEnum,
+  NotificationTypeEnum,
+  NotificationLevelEnum,
   EmailFormat,
   SentryLevel,
   NotificationPriority,

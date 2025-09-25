@@ -32,39 +32,13 @@ AccountInfo                         # 사용자 정보 조회 (인증 필요)
 
 ## 📊 데이터 모델
 
-```typescript
-// 사용자 Entity (tb_user)
-@Entity('tb_user')
-export class TbUserEntity {
-  @PrimaryGeneratedColumn({ name: 'user_id' })
-  userId: number;
+### 사용자 Entity (TbUserEntity)
 
-  @Column({ length: 255 })
-  name: string;
-
-  @Column({ length: 255, unique: true, comment: '이메일 (JWT 로그인용)' })
-  @Index('idx_email')
-  email: string;
-
-  @Column({ length: 255, comment: '비밀번호 (bcrypt 해싱)' })
-  password: string;
-
-  @Column({ length: 20, default: 'user', comment: '사용자 역할 (user, admin)' })
-  role: string;
-
-  @Column({ default: true, comment: '계정 활성화 상태' })
-  isActive: boolean;
-
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
-
-  @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
-
-  @OneToMany(() => TbCommentEntity, (comment) => comment.user)
-  comments: TbCommentEntity[];
-}
-```
+- **테이블**: `tb_user`
+- **주요 필드**: userId, name, email, password, role, isActive
+- **인덱스**: idx_email (이메일 검색용)
+- **관계**: comments (1:N with TbCommentEntity)
+- **특징**: bcrypt 해싱, unique email, user/admin 역할
 
 ## 🔐 보안 기능
 

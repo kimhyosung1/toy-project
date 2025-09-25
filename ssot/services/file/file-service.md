@@ -41,10 +41,12 @@ FileHealthCheck                     # 헬스체크
 
 ## 📊 데이터 모델
 
-```typescript
-// 현재 별도 비즈니스 로직 없음 - healthCheck()만 구현
-// DatabaseService 주입은 완료되어 향후 확장 준비됨
-```
+### 기본 구조
+
+- **FileService**: DatabaseService 연결, 헬스체크 구현
+- **FileController**: TCP 메시지 패턴 기반 컨트롤러
+- **MessagePattern**: `CustomMessagePatterns.FileHealthCheck` 사용
+- **향후 확장**: 파일 업로드/다운로드 기능 추가 예정
 
 ## 🔧 개발 명령어
 

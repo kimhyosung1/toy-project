@@ -15,8 +15,8 @@ import {
 import { Type, Expose, Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  NotificationType,
-  NotificationLevel,
+  NotificationTypeEnum,
+  NotificationLevelEnum,
   EmailFormat,
   SentryLevel,
   NotificationTypeUnion,
@@ -46,11 +46,11 @@ export class NotificationBase {
 
   @ApiProperty({
     description: '알림 레벨',
-    enum: NotificationLevel,
-    example: NotificationLevel.ERROR,
+    enum: NotificationLevelEnum,
+    example: NotificationLevelEnum.ERROR,
   })
   @Expose()
-  @IsEnum(NotificationLevel)
+  @IsEnum(NotificationLevelEnum)
   @Type(() => String)
   level: NotificationLevelUnion;
 
@@ -473,21 +473,21 @@ export type NotificationLevelAlias = NotificationLevelUnion;
 export class NotificationRequest {
   @ApiProperty({
     description: '알림 타입',
-    enum: NotificationType,
-    example: NotificationType.SLACK,
+    enum: NotificationTypeEnum,
+    example: NotificationTypeEnum.SLACK,
   })
   @Expose()
-  @IsEnum(NotificationType)
+  @IsEnum(NotificationTypeEnum)
   @Type(() => String)
   type: NotificationTypeAlias;
 
   @ApiProperty({
     description: '알림 레벨',
-    enum: NotificationLevel,
-    example: NotificationLevel.ERROR,
+    enum: NotificationLevelEnum,
+    example: NotificationLevelEnum.ERROR,
   })
   @Expose()
-  @IsEnum(NotificationLevel)
+  @IsEnum(NotificationLevelEnum)
   @Type(() => String)
   level: NotificationLevelAlias;
 
@@ -693,11 +693,11 @@ export class MultiTypeNotificationRequest {
 
   @ApiProperty({
     description: '알림 레벨',
-    enum: NotificationLevel,
-    example: NotificationLevel.ERROR,
+    enum: NotificationLevelEnum,
+    example: NotificationLevelEnum.ERROR,
   })
   @Expose()
-  @IsEnum(NotificationLevel)
+  @IsEnum(NotificationLevelEnum)
   @Type(() => String)
   level: NotificationLevelAlias;
 
@@ -775,14 +775,14 @@ export class SendNotificationsRequest {
 
   @ApiProperty({
     description: '알림 레벨',
-    enum: NotificationLevel,
-    example: NotificationLevel.ERROR,
+    enum: NotificationLevelEnum,
+    example: NotificationLevelEnum.ERROR,
   })
   @IsNotEmpty()
   @Expose()
-  @IsEnum(NotificationLevel)
+  @IsEnum(NotificationLevelEnum)
   @Type(() => String)
-  level: NotificationLevel;
+  level: NotificationLevelEnum;
 
   @ApiPropertyOptional({
     description: '추가 컨텍스트 정보',
