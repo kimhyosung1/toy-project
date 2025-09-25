@@ -49,6 +49,41 @@ ssot [서비스명] [구체적인 작업 설명]
 - ssot database "사용자 테이블에 프로필 이미지 컬럼 추가해줘"
 ```
 
+## 🎯 **현재 시스템 아키텍처 (2025.09.25 업데이트)**
+
+### **인터셉터 아키텍처**
+
+- **마이크로서비스**: `ResponseOnlyInterceptorModule` 사용
+  - `ResponseTransformInterceptor`만 동작
+  - 응답 데이터 검증/변환 후 원본 형태로 응답
+- **Gateway**: `StandardOnlyInterceptorModule` 사용
+  - `StandardResponseInterceptor`만 동작
+  - 모든 응답을 `{success: boolean, data: any}` 형태로 변환
+
+### **표준 응답 형태**
+
+```json
+// 성공 응답
+{
+  "success": true,
+  "data": {
+    "user": { "userId": 1, "name": "김효성" },
+    "token": { "accessToken": "eyJ..." }
+  }
+}
+
+// 실패 응답
+{
+  "success": false,
+  "data": {
+    "statusCode": 400,
+    "message": "에러 메시지",
+    "timestamp": "2025-09-25T00:33:29.132Z",
+    "path": "/account/signin"
+  }
+}
+```
+
 ## 🔍 문제 해결 요청
 
 ```
@@ -119,10 +154,31 @@ git status
 
 **AI는 로직 구현 후 반드시 다음을 확인하고 업데이트:**
 
-- [ ] **00_COMPLETE_GUIDE.md**: 새 API 엔드포인트 추가
-- [ ] **services/[서비스명]/[서비스명]-service.md**: API 목록 업데이트
+- [ ] **00_COMPLETE_GUIDE.md**: 새 API 엔드포인트 추가, 표준 응답 형태 반영
+- [ ] **services/[서비스명]/[서비스명]-service.md**: API 목록 업데이트, 인터셉터 모듈 정보 반영
 - [ ] **operations/database/schema.md**: 새 테이블/관계 추가
 - [ ] **01_UPDATE_GUIDE.md**: 업데이트 예시와 일치하는지 검증
+
+### 🎯 인터셉터 모듈 선택 가이드
+
+**신규 마이크로서비스 생성 시:**
+
+```typescript
+// 마이크로서비스 모듈에서
+imports: [
+  CustomConfigModule,
+  DatabaseModule,
+  ResponseOnlyInterceptorModule, // 🔄 응답 데이터 검증/변환만
+  UtilityModule,
+];
+
+// Gateway 모듈에서 (이미 설정됨)
+imports: [
+  CustomConfigModule,
+  UtilityModule,
+  StandardOnlyInterceptorModule, // 🎯 표준 응답 형태 변환
+];
+```
 
 **💡 중요**: AI는 단순히 기능만 구현하는 것이 아니라, **SSOT 문서의 일관성 유지**까지 책임져야 합니다!
 
@@ -838,7 +894,20 @@ pnpm run build:all
 
    → AI가 자동으로 **구현 + 테스트 + SSOT 문서 업데이트** 모두 처리
 
-5. **SSOT 문서 업데이트 필수**:
+5. **통합 알림 시스템 활용** (2025.09.25 신규):
+
+   ```typescript
+   // 모든 앱에서 CommonNotificationService 사용
+   await this.notification.sendNotifications({
+     message: '작업 완료',
+     level: NotificationLevelEnum.SUCCESS,
+     slack: { channel: '#alerts' },
+     emails: [{ to: 'admin@company.com', subject: '완료 알림' }],
+     sentry: { level: SentryLevel.INFO },
+   });
+   ```
+
+6. **SSOT 문서 업데이트 필수**:
    - **01_UPDATE_GUIDE.md** 예시 따라 문서 갱신
    - **00_COMPLETE_GUIDE.md** API 엔드포인트 추가
    - **schema.md** 테이블 관계 업데이트

@@ -31,14 +31,14 @@ ssot database "새 테이블 추가"
 
 ### 서비스 구조
 
-| 서비스           | 포트 | 역할                         | 상태 |
-| ---------------- | ---- | ---------------------------- | ---- |
-| **Gateway**      | 3000 | API Gateway, HTTP→TCP 프록시 | ✅   |
-| **Board**        | 3001 | 게시판 CRUD, 댓글 시스템     | ✅   |
-| **Notification** | 3002 | Slack/Sentry 알림, 큐 처리   | ✅   |
-| **Scheduler**    | 3004 | CRON 스케줄링, 배치 작업     | ✅   |
-| **Account**      | 3005 | JWT 인증, 회원가입/로그인    | ✅   |
-| **File**         | 3006 | 파일 업로드/다운로드         | ✅   |
+| 서비스           | 포트 | 역할                              | 상태 |
+| ---------------- | ---- | --------------------------------- | ---- |
+| **Gateway**      | 3000 | API Gateway, HTTP→TCP 프록시      | ✅   |
+| **Board**        | 3001 | 게시판 CRUD, 댓글 시스템          | ✅   |
+| **Notification** | 3002 | Slack/Sentry/Email 통합 알림 발송 | ✅   |
+| **Scheduler**    | 3004 | CRON 스케줄링, 배치 작업          | ✅   |
+| **Account**      | 3005 | JWT 인증, 회원가입/로그인         | ✅   |
+| **File**         | 3006 | 파일 업로드/다운로드              | ✅   |
 
 ### 통신 패턴
 
@@ -66,6 +66,8 @@ async createBoard(@Body() dto: CreateBoardRequest) {
 - **자동화 우선**: `@CheckResponseWithType` 데코레이터 기반 자동 응답 변환
 - **타입 안전성**: 런타임 타입 검증 및 변환
 - **마이크로서비스**: 단일 책임 원칙 기반 서비스 분리
+- **표준 응답**: 모든 API가 `{success: boolean, data: any}` 형태로 통일
+- **역할 분리**: 마이크로서비스(데이터 검증), Gateway(응답 표준화)
 
 ### 필수 요구사항
 
@@ -133,9 +135,9 @@ POST /account/signin            # 로그인 (JWT 토큰 발급)
 GET /account/profile            # 사용자 정보 조회 (인증 필요)
 POST /account/validate-token    # JWT 토큰 검증 (내부 서비스용)
 
-# 알림 API
-POST /notifications/slack       # Slack 메시지
-POST /notifications/error       # 에러 알림
+# 알림 API (CommonNotificationService 경유)
+GET /api/notifications/health         # 헬스체크
+POST /api/notifications/bulk          # 배치 알림 처리 (최대 500개)
 
 # 시스템 API
 GET /health-check               # 헬스체크
@@ -143,6 +145,32 @@ GET /api-docs                   # Swagger 문서
 ```
 
 ### 요청/응답 예시
+
+#### **표준 응답 형태 (2025.09.25 업데이트)**
+
+모든 API 응답은 다음과 같은 표준 형태로 제공됩니다:
+
+```typescript
+// 성공 응답
+interface StandardSuccessResponse<T> {
+  success: true;
+  data: T;
+}
+
+// 실패 응답
+interface StandardErrorResponse {
+  success: false;
+  data: {
+    statusCode: number;
+    message: string;
+    timestamp: string;
+    path: string;
+    error?: string;
+  };
+}
+```
+
+#### **실제 API 응답 예시**
 
 ```typescript
 // 게시글 작성 요청
@@ -153,14 +181,17 @@ interface CreateBoardRequest {
   password: string; // 4-20자, 영숫자+특수문자
 }
 
-// 게시글 작성 응답
-interface CreateBoardResponse {
-  boardId: number;
-  title: string;
-  content: string;
-  author: string;
-  createdAt: Date;
-  // password는 자동 제외
+// 게시글 작성 응답 (표준 형태)
+{
+  "success": true,
+  "data": {
+    "boardId": 1,
+    "title": "게시글 제목",
+    "content": "게시글 내용",
+    "author": "작성자",
+    "createdAt": "2025-09-25T00:21:44.145Z"
+    // password는 자동 제외
+  }
 }
 
 // 회원가입 요청
@@ -170,19 +201,35 @@ interface SignUpRequest {
   password: string; // 8자 이상
 }
 
-// 로그인 응답
-interface SignInResponse {
-  user: {
-    userId: number;
-    name: string;
-    email: string;
-    role: string;
-  };
-  token: {
-    accessToken: string;
-    tokenType: 'Bearer';
-    expiresIn: number; // 3600 (1시간)
-  };
+// 로그인 응답 (표준 형태)
+{
+  "success": true,
+  "data": {
+    "user": {
+      "userId": 1,
+      "name": "김효성",
+      "email": "stop70899@naver.com",
+      "role": "user",
+      "createdAt": "2025-09-25T00:21:44.145Z"
+    },
+    "token": {
+      "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "tokenType": "Bearer",
+      "expiresIn": 3600
+    }
+  }
+}
+
+// 에러 응답 예시
+{
+  "success": false,
+  "data": {
+    "statusCode": 400,
+    "message": "이메일 또는 비밀번호가 올바르지 않습니다",
+    "timestamp": "2025-09-25T00:33:29.132Z",
+    "path": "/account/signin",
+    "error": "Bad Request"
+  }
 }
 ```
 
@@ -232,6 +279,53 @@ services:
 - **최소 권한 원칙**: 필요한 권한만 부여
 - **입력 검증**: 모든 입력 데이터 검증
 - **암호화**: 민감 데이터 암호화
+- **에러 처리**: 모든 예외를 안전하게 처리하여 서버 안정성 보장
+
+### 🚨 에러 처리 시스템 (2025.09.25 업데이트)
+
+#### **다층 예외 처리 구조**
+
+```typescript
+// 1단계: AllExceptionFilter - 모든 예외 캐치
+@Catch()
+export class AllExceptionFilter implements ExceptionFilter {
+  catch(exception: any, host: ArgumentsHost): any {
+    // HTTP, RPC, WebSocket 모든 환경에서 동작
+    // 서버 크래시 방지 및 적절한 에러 응답 생성
+  }
+}
+
+// 2단계: Process Level 예외 처리
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('처리되지 않은 Promise 거부:', String(reason));
+  Sentry.captureException(reason);
+  // 서버를 죽이지 않음
+});
+
+process.on('uncaughtException', (error) => {
+  logger.error('처리되지 않은 예외:', error.stack);
+  Sentry.captureException(error);
+  process.exit(1); // 심각한 경우만 종료
+});
+
+// 3단계: StandardResponseInterceptor - 표준 형태 변환
+// 모든 에러 응답을 {success: false, data: {...}} 형태로 통일
+```
+
+#### **표준 에러 응답 형태**
+
+```json
+{
+  "success": false,
+  "data": {
+    "statusCode": 400,
+    "message": "사용자에게 표시할 에러 메시지",
+    "timestamp": "2025-09-25T00:33:29.132Z",
+    "path": "/account/signin",
+    "error": "Bad Request"
+  }
+}
+```
 
 ### 비밀번호 보안
 
@@ -299,8 +393,26 @@ app.enableCors({
 
 1. **앱 생성**: `nest generate app [서비스명]`
 2. **포트 할당**: 3000번대 순차 배정
-3. **Docker 설정**: docker-compose.yml 업데이트
-4. **Gateway 연동**: 프록시 설정 추가
+3. **인터셉터 설정**: `ResponseOnlyInterceptorModule` 추가
+4. **Docker 설정**: docker-compose.yml 업데이트
+5. **Gateway 연동**: 프록시 설정 추가
+
+#### **신규 서비스 모듈 템플릿**
+
+```typescript
+@Module({
+  imports: [
+    CustomConfigModule,
+    DatabaseModule,
+    ResponseOnlyInterceptorModule, // 🔄 필수: 응답 데이터 검증/변환
+    UtilityModule,
+    // 기타 필요한 모듈들...
+  ],
+  controllers: [NewServiceController],
+  providers: [NewServiceService],
+})
+export class NewServiceModule {}
+```
 
 ### 새 API 추가
 
@@ -308,6 +420,82 @@ app.enableCors({
 2. **Service**: 비즈니스 로직 구현
 3. **DTO**: Request/Response 클래스
 4. **Validation**: class-validator 적용
+
+### 알림 시스템 사용법 (2025.09.25 신규)
+
+#### **1. 모듈 Import**
+
+```typescript
+@Module({
+  imports: [
+    CommonNotificationModule, // 🌐 한 줄 추가로 알림 기능 사용
+  ],
+  controllers: [SomeController],
+  providers: [SomeService],
+})
+export class SomeModule {}
+```
+
+#### **2. 서비스 주입 및 사용**
+
+```typescript
+@Injectable()
+export class SomeService {
+  constructor(private readonly notification: CommonNotificationService) {}
+
+  async executeTask() {
+    try {
+      // 비즈니스 로직 실행
+      await this.performTask();
+
+      // 성공 알림
+      await this.notification.sendNotifications({
+        message: '작업이 성공적으로 완료되었습니다.',
+        level: NotificationLevelEnum.SUCCESS,
+        slack: {
+          channel: '#alerts',
+          emoji: '✅',
+        },
+      });
+    } catch (error) {
+      // 에러 발생 시 다중 채널 알림
+      await this.notification.sendNotifications({
+        message: `작업 실패: ${error.message}`,
+        level: NotificationLevelEnum.ERROR,
+        context: {
+          service: 'some-service',
+          timestamp: new Date().toISOString(),
+        },
+        slack: {
+          channel: '#critical-alerts',
+          emoji: '🚨',
+          username: 'ErrorBot',
+        },
+        emails: [
+          {
+            to: 'admin@company.com',
+            subject: '[긴급] 시스템 에러',
+            body: `에러 발생: ${error.message}`,
+          },
+        ],
+        sentry: {
+          level: SentryLevel.ERROR,
+          tags: { service: 'some-service' },
+          extra: { errorStack: error.stack },
+        },
+      });
+    }
+  }
+}
+```
+
+#### **3. 특징**
+
+- **완벽한 예외 처리**: 절대 throw하지 않음
+- **배치 처리**: 500개씩 자동 청킹
+- **자동 재시도**: 3회 재시도 (지수 백오프)
+- **실패 알림**: 실패 시 긴급 Slack 알림
+- **타입 안전성**: Enum 기반 타입 시스템
 
 ### 테스트 작성
 
@@ -378,12 +566,12 @@ ssot "전체 시스템 수정해줘"
 
 ### 서비스별 키워드
 
-| 서비스       | 키워드                        | 주요 작업            |
-| ------------ | ----------------------------- | -------------------- |
-| Gateway      | `gateway`, `라우팅`, `프록시` | API 라우팅, 미들웨어 |
-| Board        | `board`, `게시글`, `댓글`     | CRUD, 비즈니스 로직  |
-| Notification | `notification`, `알림`        | 외부 연동, 큐 처리   |
-| Database     | `database`, `entity`          | 스키마, 마이그레이션 |
+| 서비스       | 키워드                        | 주요 작업                 |
+| ------------ | ----------------------------- | ------------------------- |
+| Gateway      | `gateway`, `라우팅`, `프록시` | API 라우팅, 미들웨어      |
+| Board        | `board`, `게시글`, `댓글`     | CRUD, 비즈니스 로직       |
+| Notification | `notification`, `알림`        | 통합 알림 발송, 배치 처리 |
+| Database     | `database`, `entity`          | 스키마, 마이그레이션      |
 
 ## 🎯 문제 해결
 

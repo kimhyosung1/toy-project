@@ -1,6 +1,11 @@
 import { Controller, Get, Post, Body } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 
+/**
+ * 📱 간소화된 알림 컨트롤러
+ *
+ * 단순한 요청/응답 구조로 통일
+ */
 @Controller('notifications')
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
@@ -11,52 +16,20 @@ export class NotificationController {
   }
 
   /**
-   * 📱 Slack 메시지 전송
+   * 📦 Bulk 알림 처리 - 500개씩 배치로 처리
    */
-  @Post('/slack')
-  async sendSlack(@Body() body: { message: string; channel?: string }) {
-    return this.notificationService.sendSlack(body.message, body.channel);
-  }
-
-  /**
-   * 🚨 Slack 에러 알림 전송
-   */
-  @Post('/slack/error')
-  async sendSlackError(@Body() body: { message: string; context?: any }) {
-    return this.notificationService.sendSlackError(body.message, body.context);
-  }
-
-  /**
-   * 🚨 Sentry 에러 리포팅
-   */
-  @Post('/sentry/error')
-  async sendSentryError(@Body() body: { message: string; context?: any }) {
-    return this.notificationService.sendSentryError(body.message, body.context);
-  }
-
-  /**
-   * ✅ 성공 알림 전송
-   */
-  @Post('/success')
-  async sendSuccess(@Body() body: { message: string }) {
-    return this.notificationService.sendSuccess(body.message);
-  }
-
-  /**
-   * ⚠️ 경고 알림 전송
-   */
-  @Post('/warning')
-  async sendWarning(@Body() body: { message: string }) {
-    return this.notificationService.sendWarning(body.message);
-  }
-
-  /**
-   * 📝 Sentry 메시지 리포팅
-   */
-  @Post('/sentry')
-  async sendSentry(
-    @Body() body: { message: string; level?: 'info' | 'warning' | 'error' },
+  @Post('/bulk')
+  async sendBulk(
+    @Body()
+    body: {
+      notifications: Array<{
+        type: 'slack' | 'email' | 'sentry';
+        message: string;
+        options?: any;
+      }>;
+      batchId?: string;
+    },
   ) {
-    return this.notificationService.sendSentry(body.message, body.level);
+    return this.notificationService.sendBulk(body.notifications, body.batchId);
   }
 }

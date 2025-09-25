@@ -1,33 +1,21 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { APP_FILTER } from '@nestjs/core';
 import { NotificationController } from './notification.controller';
 import { NotificationService } from './notification.service';
-import { NotificationModule as SharedNotificationModule } from '@app/notification';
-import { GlobalExceptionFilter } from '@app/core/filter';
+import { SlackService } from './services/slack.service';
+import { SentryService } from './services/sentry.service';
 import { CustomConfigModule } from '@app/core/config/config.module';
 import { ResponseOnlyInterceptorModule } from '@app/common';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      envFilePath: [`env/${process.env.NODE_ENV || 'dev'}.env`],
-      isGlobal: true,
-    }),
-    CustomConfigModule, // CustomConfigService 제공을 위해 추가
-    SharedNotificationModule,
+    CustomConfigModule, // 🔧 통일된 환경 설정 사용
     ResponseOnlyInterceptorModule, // 🔄 응답 데이터 검증/변환만 수행
   ],
   controllers: [NotificationController],
   providers: [
     NotificationService,
-    {
-      provide: APP_FILTER,
-      useFactory: () => {
-        // Notification 앱에서는 자체적으로 알림을 처리하므로 Slack 핸들러 없음
-        return new GlobalExceptionFilter('notification', null);
-      },
-    },
+    SlackService, // 🔧 통합된 Slack 서비스
+    SentryService, // 🔧 통합된 Sentry 서비스
   ],
 })
 export class NotificationModule {}

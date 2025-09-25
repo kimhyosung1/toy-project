@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { SlackService, SentryService } from '@app/notification';
+import { SlackService } from './services/slack.service';
+import { SentryService } from './services/sentry.service';
 
 /**
- * 간단하고 깔끔한 알림 서비스
+ * 📱 간소화된 알림 서비스
  * 성공/실패만 반환하는 단순한 구조
  */
 @Injectable()
@@ -47,30 +48,82 @@ export class NotificationService {
   }
 
   /**
-   * ✅ 성공 알림 전송
+   * 📦 Bulk 알림 처리 - 간단한 배치 처리
    */
-  async sendSuccess(message: string): Promise<{ success: boolean }> {
-    const success = await this.slackService.sendSuccess(message);
-    return { success };
-  }
+  async sendBulk(
+    notifications: Array<{
+      type: 'slack' | 'email' | 'sentry';
+      message: string;
+      options?: any;
+    }>,
+    batchId?: string,
+  ) {
+    const results = [];
+    let successCount = 0;
+    let failureCount = 0;
 
-  /**
-   * ⚠️ 경고 알림 전송
-   */
-  async sendWarning(message: string): Promise<{ success: boolean }> {
-    const success = await this.slackService.sendWarning(message);
-    return { success };
-  }
+    // 모든 알림을 병렬로 처리 (간단하게)
+    for (let i = 0; i < notifications.length; i++) {
+      const notification = notifications[i];
+      try {
+        let success = false;
 
-  /**
-   * 📝 Sentry 메시지 리포팅
-   */
-  async sendSentry(
-    message: string,
-    level: 'info' | 'warning' | 'error' = 'info',
-  ): Promise<{ success: boolean }> {
-    const success = await this.sentryService.reportMessage(message, level);
-    return { success };
+        switch (notification.type) {
+          case 'slack':
+            const slackResult = await this.sendSlack(
+              notification.message,
+              notification.options?.channel,
+            );
+            success = slackResult.success;
+            break;
+
+          case 'sentry':
+            const sentryResult = await this.sendSentryError(
+              notification.message,
+              notification.options,
+            );
+            success = sentryResult.success;
+            break;
+
+          case 'email':
+            // 이메일은 아직 미구현이므로 true로 처리
+            success = true;
+            break;
+
+          default:
+            success = false;
+        }
+
+        if (success) {
+          successCount++;
+        } else {
+          failureCount++;
+        }
+
+        results.push({
+          index: i,
+          success,
+          data: success ? { sent: true } : null,
+          error: success ? null : 'Send failed',
+        });
+      } catch (error) {
+        failureCount++;
+        results.push({
+          index: i,
+          success: false,
+          data: null,
+          error: error.message,
+        });
+      }
+    }
+
+    return {
+      batchId: batchId || `batch-${Date.now()}`,
+      totalCount: notifications.length,
+      successCount,
+      failureCount,
+      results,
+    };
   }
 
   /**

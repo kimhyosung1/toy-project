@@ -1,4 +1,5 @@
 import { HttpAdapterHost, NestFactory } from '@nestjs/core';
+import { RequestMethod, ValidationPipe } from '@nestjs/common';
 import { GatewayModule } from './gateway.module';
 import { CustomConfigService } from '@app/core/config/config.service';
 import { NestExpressApplication } from '@nestjs/platform-express';
@@ -35,7 +36,21 @@ async function bootstrap() {
   const httpAdapter = app.get(HttpAdapterHost);
   app.useGlobalFilters(new AllExceptionFilter(httpAdapter));
 
-  // 🚀 게이트웨이는 단순 프록시 역할 (인터셉터 없음)
+  // 🌐 API prefix 설정 (Gateway가 모든 HTTP 요청의 진입점)
+  app.setGlobalPrefix('api', {
+    exclude: [{ path: '/', method: RequestMethod.GET }],
+  });
+
+  // 📋 ValidationPipe를 전역으로 적용 (Gateway에서 검증 후 TCP 전달)
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true, // 자동 형변환 활성화
+      // whitelist: true, // DTO에 정의된 속성만 허용
+      // forbidNonWhitelisted: true, // 정의되지 않은 속성 차단
+    }),
+  );
+
+  // 🚀 게이트웨이는 검증 후 TCP 프록시 역할
 
   const options = config.gatewayServiceOptions.options as any;
 

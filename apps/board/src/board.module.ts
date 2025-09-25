@@ -3,7 +3,7 @@ import { BoardController } from './board.controller';
 import { BoardService } from './board.service';
 import { DatabaseModule } from '@app/database';
 import { CustomConfigModule } from '@app/core/config/config.module';
-import { RedisModule } from '@app/core/redis';
+// Redis Queue 미사용으로 제거
 import { ResponseOnlyInterceptorModule } from '@app/common';
 import { UtilityModule } from '@app/utility';
 
@@ -11,7 +11,7 @@ import { UtilityModule } from '@app/utility';
   imports: [
     CustomConfigModule,
     DatabaseModule,
-    RedisModule,
+    // RedisModule 제거 - Queue 미사용
     ResponseOnlyInterceptorModule, // 🔄 응답 데이터 검증/변환만 수행
     UtilityModule, // 🛠️ UtilityService 전역 사용
   ],

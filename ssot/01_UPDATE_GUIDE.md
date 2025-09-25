@@ -17,6 +17,29 @@
 3. **SSOT 갱신** → 아래 가이드에 따라 문서 업데이트
 4. **검증** → 코드-문서 일치율 확인
 
+### 3. 현재 시스템 아키텍처 반영 (2025.09.25 업데이트)
+
+#### **인터셉터 아키텍처**
+
+- **마이크로서비스**: `ResponseOnlyInterceptorModule` 필수 사용
+- **Gateway**: `StandardOnlyInterceptorModule` 사용 (이미 설정됨)
+
+#### **표준 응답 형태**
+
+- 모든 API 응답: `{success: boolean, data: any}` 형태
+- 에러 응답: `{success: false, data: {statusCode, message, timestamp, path}}`
+
+#### **환경 설정 통일**
+
+- **모든 서비스**: `CustomConfigModule` 사용 (일관성 유지)
+- **금지**: `ConfigModule.forRoot()` 직접 사용 (중복 설정 방지)
+
+#### **비즈니스 로직 분리**
+
+- **모듈**: 설정과 의존성 주입만 담당
+- **서비스**: 비즈니스 로직 구현 (Slack 알림, 데이터 처리 등)
+- **useFactory**: 간단한 팩토리 함수만, 복잡한 로직은 서비스로 분리
+
 ## 📋 변경 유형별 갱신 가이드
 
 ### 🔧 새 서비스 추가 시
@@ -46,6 +69,24 @@
 
 - **[기능1]**: [설명]
 - **[기능2]**: [설명]
+- **표준 응답**: Gateway에서 `{success: boolean, data: any}` 형태로 변환
+
+### 모듈 구성 (2025.09.25 업데이트)
+
+```typescript
+@Module({
+  imports: [
+    CustomConfigModule,
+    DatabaseModule,
+    ResponseOnlyInterceptorModule, // 🔄 필수: 응답 데이터 검증/변환만
+    UtilityModule,
+    // 기타 필요한 모듈들...
+  ],
+  controllers: [[서비스명]Controller],
+  providers: [[서비스명]Service],
+})
+export class [서비스명]Module {}
+```
 
 ### 주요 엔드포인트
 
@@ -609,14 +650,12 @@ services:
 **모든 AI는 SSOT 업데이트 시 반드시 이 UPDATE_GUIDE를 따라야 합니다.**
 
 1. **서비스 README.md 작성/수정 시**:
-
    - ✅ 반드시 "📝 서비스별 README.md 작성 가이드" 섹션 참조
    - ✅ 표준 템플릿 구조 준수 (서비스 정보 → 핵심 기능 → API → 데이터 모델 → 개발 명령어)
    - ✅ 100줄 내외로 압축하여 AI 친화적으로 작성
    - ❌ 과도한 API 상세 명세나 확장 가이드 포함 금지
 
 2. **코드 변경 후 SSOT 갱신 시**:
-
    - ✅ 반드시 "📋 변경 유형별 갱신 가이드" 참조
    - ✅ 영향도 분석 → 갱신 → 검증 순서 준수
    - ✅ 실제 코드 기준으로 95% 일치율 유지

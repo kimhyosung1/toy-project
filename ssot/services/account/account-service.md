@@ -84,14 +84,27 @@ JWT_SECRET=dev-jwt-secret-key-2024-toy-project
 JWT_EXPIRES_IN=1h
 
 // account.module.ts
-JwtModule.registerAsync({
-  imports: [CustomConfigModule],
-  inject: [CustomConfigService],
-  useFactory: (configService: CustomConfigService) => ({
-    secret: configService.jwtSecret,
-    signOptions: { expiresIn: configService.jwtExpiresIn },
-  }),
+@Module({
+  imports: [
+    CustomConfigModule,
+    DatabaseModule,
+    RedisModule,
+    ResponseOnlyInterceptorModule, // 🔄 응답 데이터 검증/변환만 수행
+    UtilityModule,
+    JwtModule.registerAsync({
+      imports: [CustomConfigModule],
+      inject: [CustomConfigService],
+      useFactory: (configService: CustomConfigService) => ({
+        secret: configService.jwtSecret,
+        signOptions: { expiresIn: configService.jwtExpiresIn },
+      }),
+    }),
+  ],
+  controllers: [AccountController],
+  providers: [AccountService],
+  exports: [AccountService],
 })
+export class AccountModule {}
 ```
 
 ## 📋 Request/Response DTOs
@@ -106,12 +119,32 @@ export class SignUpRequestDto {
 }
 ```
 
-### 로그인 응답
+### 로그인 응답 (표준 형태)
 
 ```typescript
+// 마이크로서비스에서 반환하는 원본 데이터
 export class SignInResponseDto {
   @Expose() @Type(() => SignUpResponseDto) user: SignUpResponseDto;
   @Expose() @Type(() => AuthTokenResponseDto) token: AuthTokenResponseDto;
+}
+
+// Gateway에서 클라이언트에게 전달하는 최종 응답
+{
+  "success": true,
+  "data": {
+    "user": {
+      "userId": 1,
+      "name": "김효성",
+      "email": "stop70899@naver.com",
+      "role": "user",
+      "createdAt": "2025-09-25T00:21:44.145Z"
+    },
+    "token": {
+      "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "tokenType": "Bearer",
+      "expiresIn": 3600
+    }
+  }
 }
 ```
 

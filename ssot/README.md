@@ -13,14 +13,14 @@
 
 ### 🔧 서비스별 문서
 
-| 서비스       | 포트 | 문서                                                                       | 역할          |
-| ------------ | ---- | -------------------------------------------------------------------------- | ------------- |
-| Gateway      | 3000 | [gateway-service.md](./services/gateway/gateway-service.md)                | API Gateway   |
-| Board        | 3001 | [board-service.md](./services/board/board-service.md)                      | 게시판 시스템 |
-| Notification | 3002 | [notification-service.md](./services/notification/notification-service.md) | 알림 시스템   |
-| Scheduler    | 3004 | [scheduler-service.md](./services/scheduler/scheduler-service.md)          | 스케줄링      |
+| 서비스       | 포트 | 문서                                                                       | 역할            |
+| ------------ | ---- | -------------------------------------------------------------------------- | --------------- |
+| Gateway      | 3000 | [gateway-service.md](./services/gateway/gateway-service.md)                | API Gateway     |
+| Board        | 3001 | [board-service.md](./services/board/board-service.md)                      | 게시판 시스템   |
+| Notification | 3002 | [notification-service.md](./services/notification/notification-service.md) | 알림 시스템     |
+| Scheduler    | 3004 | [scheduler-service.md](./services/scheduler/scheduler-service.md)          | 스케줄링        |
 | Account      | 3005 | [account-service.md](./services/account/account-service.md)                | JWT 인증 시스템 |
-| File         | 3006 | [file-service.md](./services/file/file-service.md)                         | 파일 관리     |
+| File         | 3006 | [file-service.md](./services/file/file-service.md)                         | 파일 관리       |
 
 ### 🚀 운영 문서
 
@@ -48,7 +48,7 @@ ssot "전체 시스템 수정"
 | ------------------------ | ------------ | ------------------------ |
 | `gateway`, `라우팅`      | Gateway      | "새 API 엔드포인트 추가" |
 | `board`, `게시글`        | Board        | "댓글 수정 기능 구현"    |
-| `notification`, `알림`   | Notification | "슬랙 채널 변경"         |
+| `notification`, `알림`   | Notification | "통합 알림 시스템 사용"  |
 | `database`, `entity`     | Database     | "새 컬럼 추가"           |
 | `docker`, `cicd`, `배포` | Operations   | "CI/CD 파이프라인 설정"  |
 
@@ -143,7 +143,15 @@ pnpm run build:all:swc
 ./docker.sh dev restart [서비스명]
 ```
 
-## 📈 업데이트 내역 (2025-09-17)
+## 📈 업데이트 내역 (2025-09-25)
+
+### ✅ v6.1 - 통합 알림 시스템 완성 (2025.09.25)
+
+- **🌐 CommonNotificationService**: 모든 앱에서 사용하는 통합 알림 클라이언트
+- **🎯 타입 안전성**: Enum 기반 타입 시스템 구축
+- **🔄 배치 처리**: 500개씩 청킹하여 대량 알림 처리
+- **🛡️ 완벽한 예외 처리**: 절대 throw하지 않음, 안정성 보장
+- **📋 SSOT 완전 갱신**: 95% 이상 코드 일치율 달성
 
 ### ✅ v6.0 - 완전 통합 완성
 

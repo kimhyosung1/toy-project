@@ -270,6 +270,16 @@ export class CustomConfigService {
     return this.configService.get<string>('JWT_EXPIRES_IN', '1h');
   }
 
+  /**
+   * 🌐 Notification 서비스 URL
+   */
+  get notificationServiceUrl(): string {
+    return this.configService.get<string>(
+      'NOTIFICATION_SERVICE_URL',
+      `http://localhost:${this.configService.get<string>('NOTIFICATION_SERVICE_PORT', '3002')}`,
+    );
+  }
+
   get sentryDSNProduction(): string {
     return this.configService.get<string>('SENTRY_DSN_PRODUCTION', '');
   }

@@ -14,6 +14,24 @@
 - **댓글 시스템**: 계층형 댓글/대댓글 (무제한 depth)
 - **자동화**: `@CheckResponseWithType` 응답 검증/변환
 - **보안**: bcrypt 비밀번호 해싱, 응답 필터링
+- **표준 응답**: Gateway에서 `{success: boolean, data: any}` 형태로 변환
+
+## 🔧 모듈 구성 (2025.09.25 업데이트)
+
+```typescript
+@Module({
+  imports: [
+    CustomConfigModule,
+    DatabaseModule,
+    RedisModule,
+    ResponseOnlyInterceptorModule, // 🔄 응답 데이터 검증/변환만 수행
+    UtilityModule,
+  ],
+  controllers: [BoardController],
+  providers: [BoardService],
+})
+export class BoardModule {}
+```
 
 ## 🌐 API 엔드포인트
 

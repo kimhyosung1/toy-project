@@ -1,10 +1,11 @@
-import { NestFactory } from '@nestjs/core';
+import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { RequestMethod } from '@nestjs/common';
 import * as Sentry from '@sentry/node';
 import { NotificationModule } from './notification.module';
 import { NotificationLoggerService } from './common/logger.service';
-import { NotificationValidationPipe } from './common/validation.pipe';
+import { ValidationPipe } from '@nestjs/common';
+import { AllExceptionFilter } from '@app/core/filter/exception/all-exception.filter';
 
 async function bootstrap() {
   try {
@@ -15,13 +16,14 @@ async function bootstrap() {
     const logger = new NotificationLoggerService('NotificationMain');
     app.useLogger(logger);
 
-    // Exception filter는 모듈에서 처리됨
+    // 🚨 전역 Exception Filter 등록 (서버 안정성 보장)
+    const httpAdapterHost = app.get(HttpAdapterHost);
+    app.useGlobalFilters(new AllExceptionFilter(httpAdapterHost));
 
+    // 📋 ValidationPipe를 전역으로 적용 (다른 앱들과 동일한 설정)
     app.useGlobalPipes(
-      new NotificationValidationPipe({
-        transform: true,
-        whitelist: true,
-        forbidNonWhitelisted: true,
+      new ValidationPipe({
+        transform: true, // 자동 형변환 활성화
       }),
     );
 
