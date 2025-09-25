@@ -6,6 +6,7 @@ import { NotificationService } from './notification.service';
 import { NotificationModule as SharedNotificationModule } from '@app/notification';
 import { GlobalExceptionFilter } from '@app/core/filter';
 import { CustomConfigModule } from '@app/core/config/config.module';
+import { ResponseOnlyInterceptorModule } from '@app/common';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { CustomConfigModule } from '@app/core/config/config.module';
     }),
     CustomConfigModule, // CustomConfigService 제공을 위해 추가
     SharedNotificationModule,
+    ResponseOnlyInterceptorModule, // 🔄 응답 데이터 검증/변환만 수행
   ],
   controllers: [NotificationController],
   providers: [

@@ -6,7 +6,7 @@ import { SchedulerController } from './scheduler.controller';
 import { SchedulerService } from './scheduler.service';
 import { DatabaseModule } from '@app/database';
 import { UtilityModule } from '@app/utility';
-import { InterceptorModule } from '@app/common';
+import { ResponseOnlyInterceptorModule } from '@app/common';
 import { NotificationModule } from '@app/notification';
 import { GlobalExceptionFilter } from '@app/core';
 import { CustomConfigModule } from '@app/core/config/config.module';
@@ -24,7 +24,7 @@ import { BoardSchedulerService } from './board/board-scheduler.service';
     ScheduleModule.forRoot(), // 스케줄링 기능 활성화
     DatabaseModule,
     UtilityModule,
-    InterceptorModule,
+    ResponseOnlyInterceptorModule, // 🔄 응답 데이터 검증/변환만 수행
     NotificationModule,
   ],
   controllers: [SchedulerController],

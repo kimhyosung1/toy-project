@@ -14,12 +14,13 @@ import { BoardController } from './board.controller';
 import { AccountController } from './account.controller';
 import { HealthController } from './health.controller';
 import { UtilityModule } from '@app/utility';
-import { CustomJwtAuthGuard } from '@app/common';
+import { CustomJwtAuthGuard, StandardOnlyInterceptorModule } from '@app/common';
 
 @Module({
   imports: [
     CustomConfigModule,
     UtilityModule, // 🛠️ UtilityService 전역 사용
+    StandardOnlyInterceptorModule, // 🎯 Gateway에서 모든 응답을 표준 형태로 통합 처리
     // JWT 설정 (Gateway에서 토큰 검증용)
     JwtModule.registerAsync({
       imports: [CustomConfigModule],

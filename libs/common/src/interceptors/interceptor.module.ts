@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ResponseTransformInterceptor } from './response-transform.interceptor';
+import { StandardResponseInterceptor } from './standard-response.interceptor';
 import { UtilityModule } from '@app/utility';
 
 /**
@@ -8,6 +9,7 @@ import { UtilityModule } from '@app/utility';
  *
  * 역할:
  * - ResponseTransformInterceptor: 응답 데이터를 표준 형식으로 변환
+ * - StandardResponseInterceptor: 모든 응답을 일관된 형태로 변환 (결과/응답데이터)
  * - 에러 처리는 AllExceptionFilter에서 직접 처리 (인터셉터 불필요)
  * - 게이트웨이를 제외한 모든 마이크로서비스에서 import하여 사용
  *
@@ -30,6 +32,11 @@ import { UtilityModule } from '@app/utility';
     {
       provide: APP_INTERCEPTOR,
       useClass: ResponseTransformInterceptor,
+    },
+    // 📋 표준 응답 형태 인터셉터 - 모든 응답을 일관된 형태로 변환
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: StandardResponseInterceptor,
     },
   ],
 })
